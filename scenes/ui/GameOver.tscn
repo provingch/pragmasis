@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/ui/GameOver.gd" id="1_gameover"]
 
 [node name="GameOver" type="CanvasLayer"]
+layer = 5
 script = ExtResource("1_gameover")
 
 [node name="Control" type="Control" parent="."]
@@ -11,31 +12,45 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 
-[node name="ColorRect" type="ColorRect" parent="Control"]
+[node name="Backdrop" type="ColorRect" parent="Control"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.7)
+color = Color(0.039, 0.039, 0.039, 0.9)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Control"]
+[node name="VBox" type="VBoxContainer" parent="Control"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -120.0
+offset_right = 400.0
+offset_bottom = 120.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
 
-[node name="TitleLabel" type="Label" parent="Control/VBoxContainer"]
+[node name="Title" type="Label" parent="Control/VBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.164, 0.164, 1)
+theme_override_font_sizes/font_size = 88
+text = "SEÑAL PERDIDA"
 horizontal_alignment = 1
-theme_override_font_sizes/font_size = 48
-text = "GAME OVER"
 
-[node name="HintLabel" type="Label" parent="Control/VBoxContainer"]
+[node name="Detail" type="Label" parent="Control/VBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.918, 0.918, 0.918, 1)
+theme_override_font_sizes/font_size = 14
+text = "CAPTURADO"
 horizontal_alignment = 1
-text = "Press R to restart"
+
+[node name="Hint" type="Label" parent="Control/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.918, 0.918, 0.918, 0.6)
+theme_override_font_sizes/font_size = 12
+text = "[ R ] REINICIAR SECUENCIA"
+horizontal_alignment = 1

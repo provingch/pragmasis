@@ -14,6 +14,8 @@ func trigger_game_over() -> void:
 	game_over.emit()
 
 func restart() -> void:
+	# Before reload, so every _ready() in the new scene sees w=0.
+	DimensionState.reset()
 	is_game_over = false
 	get_tree().paused = false
 	get_tree().reload_current_scene()

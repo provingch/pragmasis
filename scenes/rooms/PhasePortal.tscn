@@ -1,0 +1,79 @@
+[gd_scene load_steps=10 format=3 uid="uid://b7phs4prt1lq2"]
+
+[ext_resource type="Script" path="res://scripts/rooms/PhasePortal.gd" id="1_portal"]
+[ext_resource type="Shader" path="res://shaders/phase_portal.gdshader" id="2_shader"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_portal"]
+radius = 0.9
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_portal"]
+render_priority = 0
+shader = ExtResource("2_shader")
+
+[sub_resource type="SphereMesh" id="SphereMesh_portal"]
+material = SubResource("ShaderMaterial_portal")
+radius = 0.6
+height = 1.2
+radial_segments = 24
+rings = 16
+
+[sub_resource type="TorusMesh" id="TorusMesh_ring"]
+material = SubResource("ShaderMaterial_portal")
+inner_radius = 0.85
+outer_radius = 0.92
+rings = 48
+ring_segments = 6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mote"]
+shading_mode = 0
+vertex_color_use_as_albedo = true
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_mote"]
+material = SubResource("StandardMaterial3D_mote")
+size = Vector2(0.05, 0.05)
+
+[sub_resource type="Curve" id="Curve_fade"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.2, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[node name="PhasePortal" type="Area3D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_portal")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_portal")
+
+[node name="Shell" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_portal")
+
+[node name="Ring" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0)
+mesh = SubResource("TorusMesh_ring")
+
+[node name="Light" type="OmniLight3D" parent="."]
+omni_range = 4.0
+
+[node name="Motes" type="CPUParticles3D" parent="."]
+amount = 28
+lifetime = 1.8
+mesh = SubResource("QuadMesh_mote")
+emission_shape = 1
+emission_sphere_radius = 1.0
+gravity = Vector3(0, 0.35, 0)
+initial_velocity_min = 0.05
+initial_velocity_max = 0.2
+scale_amount_min = 0.6
+scale_amount_max = 1.6
+scale_amount_curve = SubResource("Curve_fade")
+
+[node name="Label" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+pixel_size = 0.004
+billboard = 1
+font_size = 40
+outline_size = 0

@@ -1,29 +1,54 @@
-[gd_scene load_steps=5 format=3 uid="uid://bxk2p9q4r6s7c"]
+[gd_scene load_steps=8 format=3 uid="uid://bxk2p9q4r6s7c"]
 
 [ext_resource type="Script" path="res://scripts/monster/Monster.gd" id="1_monster"]
+[ext_resource type="Script" path="res://scripts/monster/Tesseract.gd" id="2_tesseract"]
+[ext_resource type="Shader" path="res://shaders/tesseract.gdshader" id="3_shader"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_monster"]
 radius = 0.5
 height = 2.0
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_monster"]
-radius = 0.5
-height = 2.0
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tesseract"]
+render_priority = 0
+shader = ExtResource("3_shader")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_monster"]
-albedo_color = Color(0.05, 0.05, 0.05, 1)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_core"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 0.85)
+
+[sub_resource type="SphereMesh" id="SphereMesh_core"]
+material = SubResource("StandardMaterial3D_core")
+radius = 0.35
+height = 0.7
 
 [node name="Monster" type="CharacterBody3D"]
+collision_layer = 4
 script = ExtResource("1_monster")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CapsuleShape3D_monster")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
-mesh = SubResource("CapsuleMesh_monster")
-surface_material_override/0 = SubResource("StandardMaterial3D_monster")
+[node name="Tesseract" type="MultiMeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+material_override = SubResource("ShaderMaterial_tesseract")
+cast_shadow = 0
+script = ExtResource("2_tesseract")
+
+[node name="Core" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+cast_shadow = 0
+mesh = SubResource("SphereMesh_core")
+
+[node name="Glow" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+light_color = Color(1, 0.12, 0.1, 1)
+omni_range = 7.0
+shadow_enabled = true
 
 [node name="CatchArea" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="CatchArea"]
 shape = SubResource("CapsuleShape3D_monster")

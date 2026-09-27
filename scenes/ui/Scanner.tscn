@@ -1,0 +1,14 @@
+[gd_scene load_steps=2 format=3 uid="uid://c5scnr8hud2kx"]
+
+[ext_resource type="Script" path="res://scripts/ui/Scanner.gd" id="1_scanner"]
+
+[node name="Scanner" type="CanvasLayer"]
+layer = 2
+
+[node name="Canvas" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("1_scanner")

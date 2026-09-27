@@ -1,12 +1,18 @@
-[gd_scene load_steps=5 format=3 uid="uid://dh8k2m5n9q3w1"]
+[gd_scene load_steps=8 format=3 uid="uid://dh8k2m5n9q3w1"]
 
 [ext_resource type="Script" path="res://scripts/Main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://scenes/monster/Monster.tscn" id="3_monster"]
 [ext_resource type="PackedScene" path="res://scenes/ui/GameOver.tscn" id="4_gameover"]
+[ext_resource type="PackedScene" path="res://scenes/ui/Scanner.tscn" id="5_scanner"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ScreenFX.tscn" id="6_fx"]
+[ext_resource type="Script" path="res://scripts/Atmosphere.gd" id="7_atmos"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
+
+[node name="Atmosphere" type="WorldEnvironment" parent="."]
+script = ExtResource("7_atmos")
 
 [node name="Rooms" type="Node3D" parent="."]
 
@@ -14,5 +20,9 @@ script = ExtResource("1_main")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 
 [node name="Monster" parent="." instance=ExtResource("3_monster")]
+
+[node name="ScreenFX" parent="." instance=ExtResource("6_fx")]
+
+[node name="Scanner" parent="." instance=ExtResource("5_scanner")]
 
 [node name="GameOver" parent="." instance=ExtResource("4_gameover")]

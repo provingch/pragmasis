@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/ScreenFX.gd" id="1_fx"]
+[ext_resource type="Shader" path="res://shaders/screen_fx.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fx"]
+shader = ExtResource("2_shader")
+
+[node name="ScreenFX" type="CanvasLayer"]
+script = ExtResource("1_fx")
+
+[node name="FX" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_fx")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
