@@ -16,7 +16,7 @@ func _process(delta: float) -> void:
 	var monster := get_tree().get_first_node_in_group("monster") as Monster
 	var player := get_tree().get_first_node_in_group("player") as Node3D
 	var target := 0.0
-	if monster and player and monster.visible:
+	if monster and player and monster.is_hunting():
 		var d := monster.global_position.distance_to(player.global_position)
 		target = clampf(1.0 - d / DANGER_RANGE, 0.0, 1.0) * monster.coherence()
 	_danger = move_toward(_danger, target, delta * 1.5)

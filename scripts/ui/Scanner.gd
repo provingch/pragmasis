@@ -17,6 +17,7 @@ const HEADER_H := 30.0
 const FOOTER_H := 78.0
 const SIDE_W := 170.0
 const CELL := 34.0
+const SCAN_RADIUS := 1
 const OPEN_TIME := 0.22
 const SWEEP_PERIOD := 2.4
 
@@ -94,6 +95,16 @@ func _draw_side() -> void:
 	]
 	for i in rows.size():
 		_text(Vector2(16, HEADER_H + 140 + i * 18), rows[i], DIM, 11)
+	# Threat meter: this world's intrinsic hostility, 5 blocks = x2.0.
+	var threat: float = DimensionState.LAYERS[w].threat
+	var blocks := clampi(roundi(threat * 2.5), 1, 5)
+	_text(Vector2(16, HEADER_H + 200), "AMENAZA x%.1f" % threat, RED if threat > 1.0 else FG, 11)
+	for i in 5:
+		var r := Rect2(16 + i * 14, HEADER_H + 208, 10, 8)
+		if i < blocks:
+			draw_rect(r, RED if threat > 1.0 else FG)
+		else:
+			draw_rect(r, DIM, false, 1.0)
 	# Barcode: decorative, seeded so it doesn't shimmer.
 	var x := 16.0
 	var rng := RandomNumberGenerator.new()
@@ -105,7 +116,7 @@ func _draw_side() -> void:
 
 func _draw_panels() -> void:
 	var pw := DimensionState.player_w
-	var n := 2 * RoomGenerator.grid_radius + 1
+	var n := 2 * SCAN_RADIUS + 1
 	var panel := CELL * n
 	var area := Rect2(SIDE_W, HEADER_H, DEVICE.x - SIDE_W, DEVICE.y - HEADER_H - FOOTER_H)
 	var gap := (area.size.x - panel * 3.0) / 4.0
@@ -122,46 +133,51 @@ func _draw_panels() -> void:
 		if not in_range:
 			_draw_no_signal(Rect2(p0, Vector2.ONE * panel))
 			continue
-		_draw_grid(p0, n, here)
 		_draw_layer_contents(p0, w, here)
 
-func _draw_grid(p0: Vector2, n: int, here: bool) -> void:
+## Window of cells around the player: real walls with door gaps, portal
+## glyphs, crosshairs at interior corners.
+func _draw_layer_contents(p0: Vector2, w: int, here: bool) -> void:
+	var r := SCAN_RADIUS
+	var n := 2 * r + 1
+	var center := p0 + Vector2.ONE * CELL * (r + 0.5)
+	var cell := _player_cell()
 	var col := FG if here else DIM
-	var panel := CELL * n
-	draw_rect(Rect2(p0, Vector2.ONE * panel), col, false, 2.0 if here else 1.0)
-	for k in range(1, n):
-		draw_line(p0 + Vector2(k * CELL, 0), p0 + Vector2(k * CELL, panel), FAINT, 1.0)
-		draw_line(p0 + Vector2(0, k * CELL), p0 + Vector2(panel, k * CELL), FAINT, 1.0)
+	draw_rect(Rect2(p0, Vector2.ONE * CELL * n), FAINT, false, 1.0)
+
+	for dx in range(-r, r + 1):
+		for dz in range(-r, r + 1):
+			var room: Room = RoomGenerator.rooms.get(Vector4i(cell.x + dx, 0, cell.y + dz, w))
+			if room == null:
+				continue
+			var c := center + Vector2(dx, dz) * CELL
+			var h := CELL / 2.0
+			_draw_wall(c + Vector2(-h, -h), c + Vector2(h, -h), room.exits[Room.Exit.NORTH], col)
+			_draw_wall(c + Vector2(-h, h), c + Vector2(h, h), room.exits[Room.Exit.SOUTH], col)
+			_draw_wall(c + Vector2(h, -h), c + Vector2(h, h), room.exits[Room.Exit.EAST], col)
+			_draw_wall(c + Vector2(-h, -h), c + Vector2(-h, h), room.exits[Room.Exit.WEST], col)
+			var glyphs := ("▲" if room.phase_positive else "") + ("▼" if room.phase_negative else "")
+			if glyphs != "":
+				_text(c + Vector2(-h + 4, -h + 12), glyphs, col, 9)
 	for a in range(1, n):
 		for b in range(1, n):
-			var c := p0 + Vector2(a, b) * CELL
-			draw_line(c - Vector2(4, 0), c + Vector2(4, 0), col, 1.0)
-			draw_line(c - Vector2(0, 4), c + Vector2(0, 4), col, 1.0)
+			var k := p0 + Vector2(a, b) * CELL
+			draw_line(k - Vector2(3, 0), k + Vector2(3, 0), FAINT, 1.0)
+			draw_line(k - Vector2(0, 3), k + Vector2(0, 3), FAINT, 1.0)
 
-func _draw_layer_contents(p0: Vector2, w: int, here: bool) -> void:
-	var r := RoomGenerator.grid_radius
-	var center := p0 + Vector2.ONE * CELL * (r + 0.5)
-	for coord in RoomGenerator.rooms:
-		if coord.w != w:
-			continue
-		var room := RoomGenerator.rooms[coord]
-		var c := center + Vector2(coord.x, coord.z) * CELL
-		var glyphs := ("▲" if room.phase_positive else "") + ("▼" if room.phase_negative else "")
-		if glyphs != "":
-			_text(c + Vector2(-CELL / 2.0 + 3, -CELL / 2.0 + 11), glyphs, FG if here else DIM, 9)
-
-	var cell := _player_cell()
+	# Panel coordinates are relative to the player's cell centre.
+	var origin := center - Vector2(cell) * CELL
 	if here:
-		draw_rect(Rect2(center + Vector2(cell) * CELL - Vector2.ONE * CELL / 2.0, Vector2.ONE * CELL), FG, false, 2.0)
 		var player := get_tree().get_first_node_in_group("player") as Node3D
 		if player and fmod(_t, 0.8) < 0.6:
-			var pp := center + _to_panel(player.global_position)
+			var pp := origin + _to_panel(player.global_position)
 			draw_rect(Rect2(pp - Vector2(3, 3), Vector2(6, 6)), FG)
 
 	var monster := _monster()
 	if monster and monster.entity_w == w:
-		if monster.visible:
-			var mp := center + _to_panel(monster.global_position).clamp(-Vector2.ONE * CELL * (r + 0.5), Vector2.ONE * CELL * (r + 0.5))
+		if monster.is_hunting():
+			var edge := Vector2.ONE * CELL * (r + 0.5)
+			var mp := center + (origin + _to_panel(monster.global_position) - center).clamp(-edge, edge)
 			var lit := _sweep_boost(mp.x)
 			var s := 3.0 + 3.0 * monster.coherence()
 			draw_rect(Rect2(mp - Vector2(s, s), Vector2(s, s) * 2.0), Color(RED, 0.5 + 0.5 * lit))
@@ -188,7 +204,7 @@ func _draw_footer() -> void:
 	var pw := DimensionState.player_w
 	if monster:
 		var dw := monster.entity_w - pw
-		var status := "ACTIVA" if monster.visible else "LATENTE"
+		var status := "ACTIVA" if monster.is_hunting() else "LATENTE"
 		var line := "ENTIDAD   Δw %+d   COHERENCIA %.2f   ESTADO %s" % [dw, monster.coherence(), status]
 		_text(Vector2(14, y), line, RED if _entity_hunting_here() else FG, 11)
 
@@ -233,13 +249,22 @@ func _monster() -> Monster:
 
 func _entity_hunting_here() -> bool:
 	var m := _monster()
-	return m != null and m.visible and m.entity_w == DimensionState.player_w
+	return m != null and m.is_hunting() and m.entity_w == DimensionState.player_w
 
 func _player_cell() -> Vector2i:
 	var player := get_tree().get_first_node_in_group("player") as Node3D
 	if player == null:
 		return Vector2i.ZERO
-	return Vector2i(roundi(player.global_position.x / Room.ROOM_SIZE), roundi(player.global_position.z / Room.ROOM_SIZE))
+	return RoomGenerator.cell_of(player.global_position)
+
+## Wall segment; an open one keeps only its two ends, leaving the door gap.
+func _draw_wall(a: Vector2, b: Vector2, open: bool, col: Color) -> void:
+	if not open:
+		draw_line(a, b, col, 2.0)
+		return
+	var stub := (b - a) * 0.3
+	draw_line(a, a + stub, col, 2.0)
+	draw_line(b - stub, b, col, 2.0)
 
 func _room_coord() -> Vector4i:
 	var c := _player_cell()

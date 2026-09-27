@@ -11,6 +11,8 @@ const DOOR_WIDTH := 3.0
 const PORTAL_INSET := 1.5
 const PORTAL_HEIGHT := 1.5
 const TRIM_HEIGHT := 0.3
+## Beyond this the fog has already eaten everything; skip drawing it.
+const VIS_RANGE := 48.0
 const PHASE_PORTAL_SCENE := preload("res://scenes/rooms/PhasePortal.tscn")
 
 enum Exit { NORTH, SOUTH, EAST, WEST }
@@ -21,9 +23,13 @@ enum Exit { NORTH, SOUTH, EAST, WEST }
 @export var phase_negative := false
 @export var w := 0
 
-# Shared across all rooms of a layer: 27 rooms, 9 materials.
+# Shared across all rooms of a layer: 3 materials per layer.
 static var _materials := {}
 
+# Each room is two merged meshes instead of ~20 boxes: one draw call per
+# material instead of per box, which is what keeps ~70 attached rooms cheap.
+var _solid: CSGCombiner3D
+var _deco: CSGCombiner3D
 var _light: OmniLight3D
 var _fixture_mat: StandardMaterial3D
 var _style: Dictionary
@@ -34,6 +40,9 @@ var _seed := 0.0
 func _ready() -> void:
 	_style = DimensionState.LAYERS[w]
 	_seed = randf() * 100.0
+	_solid = _combiner(true)
+	_deco = _combiner(false)
+	_deco.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_build_floor_ceiling()
 	_build_walls()
 	_build_light()
@@ -68,14 +77,19 @@ func _build_phase_portal(direction: int, pos: Vector3) -> void:
 	portal.position = pos
 	add_child(portal)
 
-func _box(size: Vector3, pos: Vector3, mat: Material, collide := true) -> CSGBox3D:
+func _combiner(collide: bool) -> CSGCombiner3D:
+	var c := CSGCombiner3D.new()
+	c.use_collision = collide
+	c.visibility_range_end = VIS_RANGE
+	add_child(c)
+	return c
+
+func _box(size: Vector3, pos: Vector3, mat: Material, collide := true) -> void:
 	var box := CSGBox3D.new()
 	box.size = size
 	box.position = pos
 	box.material = mat
-	box.use_collision = collide
-	add_child(box)
-	return box
+	(_solid if collide else _deco).add_child(box)
 
 func _build_floor_ceiling() -> void:
 	_box(Vector3(ROOM_SIZE, WALL_THICKNESS, ROOM_SIZE), Vector3(0, -WALL_THICKNESS / 2.0, 0), _layer_material("floor"))
@@ -115,6 +129,13 @@ func _build_light() -> void:
 	_light.light_color = _style.light
 	_base_energy = _style.light_energy
 	_light.shadow_enabled = true
+	# Up to ~170 rooms are attached; only nearby lights are worth it, and
+	# omni shadows re-render the scene 6x per light, so only the room you're
+	# in (and a doorway's worth) keeps them.
+	_light.distance_fade_enabled = true
+	_light.distance_fade_begin = 32.0
+	_light.distance_fade_shadow = 9.0
+	_light.distance_fade_length = 10.0
 	add_child(_light)
 
 	# Per-room so its glow can flicker in sync with this room's light.
