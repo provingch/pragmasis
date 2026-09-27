@@ -19,6 +19,7 @@ var _player: Node3D
 func _ready() -> void:
 	visible = false
 	set_physics_process(false)
+	catch_area.monitoring = false
 	_player = get_tree().get_first_node_in_group("player") as Node3D
 	catch_area.body_entered.connect(_on_catch_area_body_entered)
 	_schedule_next_spawn()
@@ -34,6 +35,7 @@ func _activate() -> void:
 	visible = true
 	state = State.CHASE
 	set_physics_process(true)
+	catch_area.monitoring = true
 	AudioManager.start_chase()
 
 func _pick_spawn_position() -> Vector3:
