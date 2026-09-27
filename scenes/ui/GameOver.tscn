@@ -1,0 +1,41 @@
+[gd_scene load_steps=2 format=3 uid="uid://cq8n1v3m5x7d9"]
+
+[ext_resource type="Script" path="res://scripts/ui/GameOver.gd" id="1_gameover"]
+
+[node name="GameOver" type="CanvasLayer"]
+script = ExtResource("1_gameover")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="ColorRect" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.7)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="Control/VBoxContainer"]
+layout_mode = 2
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 48
+text = "GAME OVER"
+
+[node name="HintLabel" type="Label" parent="Control/VBoxContainer"]
+layout_mode = 2
+horizontal_alignment = 1
+text = "Press R to restart"

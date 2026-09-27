@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3 uid="uid://bxk2p9q4r6s7c"]
+
+[ext_resource type="Script" path="res://scripts/monster/Monster.gd" id="1_monster"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_monster"]
+radius = 0.5
+height = 2.0
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_monster"]
+radius = 0.5
+height = 2.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_monster"]
+albedo_color = Color(0.05, 0.05, 0.05, 1)
+
+[node name="Monster" type="CharacterBody3D"]
+script = ExtResource("1_monster")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_monster")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CapsuleMesh_monster")
+surface_material_override/0 = SubResource("StandardMaterial3D_monster")
+
+[node name="CatchArea" type="Area3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="CatchArea"]
+shape = SubResource("CapsuleShape3D_monster")
