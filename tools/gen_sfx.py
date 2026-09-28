@@ -226,6 +226,95 @@ def scanner(opening: bool) -> np.ndarray:
     return np.concatenate([beeps, fade_edges(norm(off, -12), 2)])
 
 
+def breath() -> np.ndarray:
+    """Winded breathing, 2.4 s seamless loop: a sharp inhale and a longer
+    exhale, noise through two mouth/throat formants; the loop's edges are
+    silent gaps between breaths."""
+    dur = 2.4
+    t = t_axis(dur)
+    x = np.zeros_like(t)
+    for start, length, gain, lo, hi in [(0.08, 0.45, 0.8, 900, 2600), (0.62, 0.9, 1.0, 500, 1800),
+                                        (1.62, 0.36, 0.7, 950, 2700)]:
+        seg = (t >= start) & (t < start + length)
+        u = (t[seg] - start) / length
+        shape = np.sin(np.pi * u) ** 1.5
+        n = noise(length + 0.01)[: seg.sum()]
+        voiced = filt(n, "bandpass", [lo, hi], 2) + 0.5 * filt(n, "bandpass", [lo * 0.5, lo], 2)
+        x[seg] += gain * voiced * shape
+    return norm(x, -8)
+
+
+def anchor_hum() -> np.ndarray:
+    """The exit's beacon, 4 s seamless loop: a bright open chord (A, E, A,
+    C#: whole cycles per loop) under a slow shimmer, clearly not the
+    portals' low drone."""
+    dur = 4.0
+    t = t_axis(dur)
+    x = sum(a * osc(f, t) for f, a in [(220, 0.5), (330, 0.4), (440, 0.35), (554.25, 0.25), (880, 0.12), (880.5, 0.12)])
+    x *= 0.8 + 0.2 * osc(0.5, t)
+    return norm(np.tanh(1.3 * x), -6)
+
+
+def omen() -> np.ndarray:
+    """Something far away is about to fold into the world: a low rumble and
+    a detuned metallic scrape, both muffled by distance, ending in a tail."""
+    dur = 3.0
+    t = t_axis(dur)
+    rumble = filt(noise(dur), "lowpass", 120) * np.clip(t / 1.0, 0, 1) * np.exp(-np.maximum(t - 1.2, 0) / 0.8)
+    scrape_f = 310 * (1 + 0.04 * osc(5.3, t))
+    scrape = osc(scrape_f, t, "saw") + osc(scrape_f * 1.059, t, "saw")
+    scrape = filt(scrape, "bandpass", [400, 1600], 2) * env(t, 0.6, 0.9, 0.4)
+    x = 1.0 * rumble / np.abs(rumble).max() + 0.35 * scrape / np.abs(scrape).max()
+    return fade_edges(norm(filt(x, "lowpass", 2200), -4), 30)
+
+
+def hide(entering: bool) -> np.ndarray:
+    """Door of a closet: a creak gliding down (in) or up (out), then a soft thud."""
+    dur = 0.55
+    t = t_axis(dur)
+    f = (320 * (0.6 ** (t / 0.3))) if entering else (190 * (1.6 ** (t / 0.3)))
+    creak = osc(f * (1 + 0.03 * rng.standard_normal(len(t)).cumsum() / 200), t, "saw")
+    creak = filt(creak, "bandpass", [300, 2500], 2) * env(t, 0.02, 0.12) * (t < 0.3)
+    thud_at = 0.3
+    thud = filt(noise(dur), "lowpass", 300) * env(t, 0.002, 0.05, thud_at)
+    thud += 0.6 * osc(70, t) * env(t, 0.002, 0.07, thud_at)
+    return fade_edges(norm(0.5 * creak + thud, -6))
+
+
+def hide_unstable() -> np.ndarray:
+    """The hideout is giving way: a buzzing electric crackle that stutters."""
+    dur = 1.3
+    t = t_axis(dur)
+    buzz = osc(120, t, "square") * (np.sin(2 * np.pi * 9 * t) > 0)
+    clicks = np.zeros_like(t)
+    for i in rng.integers(0, len(t) - 200, 70):
+        clicks[i:i + 120] += rng.uniform(0.4, 1.0) * np.exp(-np.arange(120) / 20)
+    x = 0.4 * filt(buzz, "lowpass", 3000) + filt(clicks * rng.choice([-1, 1], len(t)), "highpass", 1500, 2)
+    return fade_edges(norm(x * np.clip((dur - t) / 0.3, 0, 1), -5), 5)
+
+
+def sequence_done() -> np.ndarray:
+    """Anchor reached: a quick rising arpeggio ringing into a bright chord."""
+    dur = 1.6
+    t = t_axis(dur)
+    x = np.zeros_like(t)
+    for i, f in enumerate([440, 554.37, 659.25, 880]):
+        start = i * 0.08
+        x += osc(f, t) * env(t, 0.005, 0.7, start) + 0.3 * osc(2 * f, t) * env(t, 0.005, 0.3, start)
+    return fade_edges(norm(np.tanh(1.2 * x), -4), 20)
+
+
+def collapse() -> np.ndarray:
+    """Time's up: a falling siren over a sub hit that doesn't let go."""
+    dur = 2.6
+    t = t_axis(dur)
+    siren = osc(900 * (0.25 ** (t / dur)) * (1 + 0.06 * osc(6, t)), t, "saw")
+    siren = filt(siren, "lowpass", 3500) * env(t, 0.05, 1.2)
+    sub = np.tanh(3 * osc(38, t)) * env(t, 0.005, 1.4)
+    x = 0.6 * siren + sub + 0.6 * filt(noise(dur), "lowpass", 1500) * env(t, 0.001, 0.15)
+    return fade_edges(norm(x * np.clip((dur - t) / 0.5, 0, 1), -1), 5)
+
+
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     for i in range(3):
@@ -240,5 +329,13 @@ if __name__ == "__main__":
     write("ui_select", blip([1400, 2100], 0.035, 0.01, peak_db=-10))
     write("scanner_open", scanner(opening=True))
     write("scanner_close", scanner(opening=False))
+    write("breath", breath(), loop=True)
+    write("anchor_hum", anchor_hum(), loop=True)
+    write("omen", omen())
+    write("hide_in", hide(entering=True))
+    write("hide_out", hide(entering=False))
+    write("hide_unstable", hide_unstable())
+    write("sequence_done", sequence_done())
+    write("collapse", collapse())
     for p in sorted(OUT.glob("*.wav")):
         print(f"{p.name:22s} {p.stat().st_size / 1024:6.1f} KB")

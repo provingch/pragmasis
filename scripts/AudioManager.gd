@@ -33,6 +33,12 @@ const SFX := {
 	&"ui_select": preload("res://audio/sfx/ui_select.wav"),
 	&"scanner_open": preload("res://audio/sfx/scanner_open.wav"),
 	&"scanner_close": preload("res://audio/sfx/scanner_close.wav"),
+	&"omen": preload("res://audio/sfx/omen.wav"),
+	&"hide_in": preload("res://audio/sfx/hide_in.wav"),
+	&"hide_out": preload("res://audio/sfx/hide_out.wav"),
+	&"hide_unstable": preload("res://audio/sfx/hide_unstable.wav"),
+	&"sequence_done": preload("res://audio/sfx/sequence_done.wav"),
+	&"collapse": preload("res://audio/sfx/collapse.wav"),
 }
 
 @onready var chase_player: AudioStreamPlayer = $ChasePlayer

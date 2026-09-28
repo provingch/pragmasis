@@ -27,6 +27,8 @@ func _ready() -> void:
 	MenuStyle.label(%LogoText, Fonts.terminal(4), 15, MenuStyle.DIM)
 	for l: Label in [%Status, %Build, %Keys]:
 		MenuStyle.label(l, Fonts.terminal(2), 17, Color(1, 1, 1, 0.5))
+	if GameManager.best > 0:
+		%Status.text = "RÉCORD // %02d SECUENCIAS" % GameManager.best
 	_ghosts = [_ghost(MenuStyle.ACCENT, GLITCH_RED, 3.4), _ghost(MenuStyle.GHOST, GLITCH_CYAN, 2.7)]
 	%NewGame.pressed.connect(_new_game)
 	%Continue.pressed.connect(_notice.bind("NO HAY PARTIDA GUARDADA"))

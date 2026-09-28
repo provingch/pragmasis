@@ -1,8 +1,19 @@
 extends CharacterBody3D
 class_name Player
 
-const WALK_SPEED := 4.0
-const RUN_SPEED := 7.5
+const WALK_SPEED := 3.8
+const RUN_SPEED := 7.0
+## Stamina runs 0..1. A full bar sprints SPRINT_TIME seconds; it refills in
+## REGEN_TIME once REGEN_DELAY has passed without sprinting. Emptying it
+## leaves you EXHAUST_TIME seconds at EXHAUSTED_SPEED, panting.
+const SPRINT_TIME := 4.0
+const REGEN_TIME := 7.0
+const REGEN_DELAY := 1.0
+const EXHAUST_TIME := 2.5
+const EXHAUSTED_SPEED := 2.4
+## Hideouts: stable this long, then unstable, then they throw you out.
+const HIDE_MAX := 20.0
+const HIDE_UNSTABLE := 14.0
 const MOUSE_SENSITIVITY := 0.0025
 const GRAVITY := 9.8
 const BOB_FREQ := 1.6
@@ -29,6 +40,16 @@ const JERK_DAMP := 11.0
 @onready var camera: Camera3D = $Head/Camera3D
 @onready var steps_walk: AudioStreamPlayer = $StepsWalk
 @onready var steps_run: AudioStreamPlayer = $StepsRun
+@onready var breath: AudioStreamPlayer = $Breath
+
+var stamina := 1.0
+var exhausted := 0.0
+## Inside a hideout: frozen, looking out through its slit, undetectable.
+var hidden := false
+## Seconds spent in the current hideout.
+var hide_t := 0.0
+var _since_sprint := 0.0
+var _hide_room: Room
 
 var _pitch := 0.0
 var _bob_t := 0.0
@@ -45,6 +66,13 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("interact"):
+		if hidden:
+			leave_hideout()
+		elif hideout_in_reach():
+			enter_hideout(hideout_in_reach())
+	if hidden:
+		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var yaw: float = event.relative.x * MOUSE_SENSITIVITY
 		rotate_y(-yaw)
@@ -56,9 +84,15 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
 
+	if hidden:
+		_tick_hideout(delta)
+		return
+
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
-	var speed := RUN_SPEED if Input.is_action_pressed("run") else WALK_SPEED
+	var sprinting := Input.is_action_pressed("run") and direction != Vector3.ZERO and exhausted <= 0.0 and stamina > 0.0
+	_tick_stamina(delta, sprinting)
+	var speed := RUN_SPEED if sprinting else (EXHAUSTED_SPEED if exhausted > 0.0 else WALK_SPEED)
 
 	if direction:
 		velocity.x = direction.x * speed
@@ -77,13 +111,82 @@ func _physics_process(delta: float) -> void:
 
 	var hspeed := Vector2(velocity.x, velocity.z).length()
 	_bob_amount = clampf(hspeed / RUN_SPEED, 0.0, 1.0)
-	var running := Input.is_action_pressed("run") and hspeed > 0.1
+	var running := sprinting and hspeed > 0.1
 	if is_on_floor() and hspeed > 0.1:
 		var before := _bob_t
 		_bob_t += delta * hspeed * BOB_FREQ
 		if floori((_bob_t - STEP_PHASE) / TAU) != floori((before - STEP_PHASE) / TAU):
 			(steps_run if running else steps_walk).play()
 	camera.fov = lerpf(camera.fov, RUN_FOV if running else WALK_FOV, delta * 6.0)
+
+func _tick_stamina(delta: float, sprinting: bool) -> void:
+	exhausted = maxf(exhausted - delta, 0.0)
+	if sprinting:
+		_since_sprint = 0.0
+		stamina = maxf(stamina - delta / SPRINT_TIME, 0.0)
+		if stamina <= 0.0:
+			exhausted = EXHAUST_TIME
+			breath.play()
+	else:
+		_since_sprint += delta
+		if _since_sprint >= REGEN_DELAY:
+			stamina = minf(stamina + delta / REGEN_TIME, 1.0)
+	# Panting outlasts the slowdown a little, fading as you recover.
+	if breath.playing:
+		breath.volume_db = linear_to_db(clampf(exhausted / EXHAUST_TIME + (1.0 - stamina) * 0.5, 0.0, 1.0))
+		if exhausted <= 0.0 and stamina > 0.5:
+			breath.stop()
+
+# --- hideouts -------------------------------------------------------------------------
+
+## The hideout of the room you're in, if you're at its door.
+func hideout_in_reach() -> Room:
+	var room := RoomGenerator.room_at(global_position, DimensionState.player_w)
+	if room == null or not room.hideout:
+		return null
+	var door := room.global_position + Room.HIDE_EXIT
+	return room if Vector2(global_position.x - door.x, global_position.z - door.z).length() <= Room.HIDE_REACH else null
+
+func enter_hideout(room: Room) -> void:
+	var monster := get_tree().get_first_node_in_group("monster") as Monster
+	if monster and monster.saw_hiding():
+		GameManager.trigger_game_over("TE VIO ESCONDERTE")
+		return
+	if monster:
+		monster.lose_track()
+	hidden = true
+	hide_t = 0.0
+	_hide_room = room
+	collision_layer = 0 # nothing detects you in there
+	velocity = Vector3.ZERO
+	global_position = room.global_position + Room.HIDE_POS
+	rotation.y = Room.HIDE_YAW
+	_pitch = 0.0
+	head.rotation.x = 0.0
+	_bob_amount = 0.0
+	AudioManager.play_sfx(&"hide_in")
+
+func leave_hideout() -> void:
+	if not hidden:
+		return
+	hidden = false
+	collision_layer = 2
+	if is_instance_valid(_hide_room):
+		global_position = _hide_room.global_position + Room.HIDE_EXIT
+	AudioManager.play_sfx(&"hide_out")
+
+## The clock keeps running in there; after HIDE_UNSTABLE it starts giving
+## way, at HIDE_MAX it throws you out.
+func _tick_hideout(delta: float) -> void:
+	var before := hide_t
+	hide_t += delta
+	stamina = minf(stamina + delta / REGEN_TIME, 1.0)
+	if before < HIDE_UNSTABLE and hide_t >= HIDE_UNSTABLE:
+		AudioManager.play_sfx(&"hide_unstable")
+	if hide_t >= HIDE_UNSTABLE and is_instance_valid(_hide_room):
+		_hide_room.disturb(0.2)
+	if hide_t >= HIDE_MAX:
+		leave_hideout()
 
 # Springs run per rendered frame so they stay smooth above 60 fps.
 func _process(delta: float) -> void:

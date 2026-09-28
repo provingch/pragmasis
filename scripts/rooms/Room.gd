@@ -8,7 +8,8 @@ class_name Room
 ##
 ## Nothing collidable ever goes in the walkway (the plus joining the doors)
 ## or in the two portal corners, on any layer: a portal drops the player at
-## the same x/z in the next layer, whatever stands there.
+## the same x/z in the next layer, whatever stands there. The third corner
+## (+x, -z) is kept for the hideout, so no style puts props there either.
 ##
 ## Geometry is plain boxes, batched into one surface per material and built
 ## once per (layer, exits, variant): every room with that key shares the
@@ -29,7 +30,14 @@ const VIS_MARGIN := 14.0
 const VARIANTS := 4
 ## Inner face of the walls, from the room's centre.
 const INNER := ROOM_SIZE / 2.0 - WALL_THICKNESS / 2.0
+## Hideout (closet in the +x -z corner, opening west). Player body
+## positions: inside, and just in front of its door.
+const HIDE_POS := Vector3(4.05, 1.0, -4.05)
+const HIDE_EXIT := Vector3(2.6, 1.0, -4.0)
+const HIDE_YAW := PI / 2.0 # facing -x, out through the slit
+const HIDE_REACH := 1.3
 const PHASE_PORTAL_SCENE := preload("res://scenes/rooms/PhasePortal.tscn")
+const ANCHOR_SCENE := preload("res://scenes/rooms/Anchor.tscn")
 const GLITCH_SHADER := preload("res://shaders/glitch.gdshader")
 ## Every material kind a style may use; prewarmed for every layer.
 const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch"]
@@ -42,6 +50,8 @@ enum Exit { NORTH, SOUTH, EAST, WEST }
 @export var phase_negative := false
 @export var w := 0
 var variant := 0
+var hideout := false
+var has_anchor := false
 
 static var _materials := {}
 static var _grime := {}
@@ -51,6 +61,8 @@ static var _cube: Array = []
 static var _box_shapes := {}
 ## "w:exits:variant" -> {mesh, fixture, colliders}
 static var _built := {}
+## w -> {mesh, colliders}: the layer's hideout, added to rooms that have one.
+static var _hideouts := {}
 
 var _mesh: MeshInstance3D
 var _fixture: MeshInstance3D
@@ -60,6 +72,7 @@ var _style: Dictionary
 var _base_energy := 1.0
 var _t := 0.0
 var _seed := 0.0
+var _disturb_t := 0.0
 
 # Build scratch, only while building a new key.
 var _pieces := {} # kind -> [[size, pos], ...]
@@ -81,12 +94,19 @@ func _ready() -> void:
 	_fixture.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var body := StaticBody3D.new()
 	add_child(body)
-	for c: Array in built.colliders:
+	var colliders: Array = built.colliders
+	if hideout:
+		var h: Dictionary = hideout_geometry(w)
+		_instance(h.mesh)
+		colliders = colliders + h.colliders
+	for c: Array in colliders:
 		var cs := CollisionShape3D.new()
 		cs.shape = _shape(c[0])
 		cs.position = c[1]
 		body.add_child(cs)
 	_build_light()
+	if has_anchor:
+		add_child(ANCHOR_SCENE.instantiate())
 	# Opposite corners so both portals can coexist in one room.
 	var corner := ROOM_SIZE / 2.0 - PORTAL_INSET
 	if phase_positive:
@@ -118,8 +138,16 @@ func _process(delta: float) -> void:
 				k = 0.0
 			elif r < 0.035:
 				k = 1.8
+	if _disturb_t > 0.0:
+		_disturb_t -= delta
+		k = 0.05 if randf() < 0.4 else randf_range(0.2, 1.7)
 	_light.light_energy = _base_energy * k
 	_fixture_mat.emission_energy_multiplier = 4.0 * k
+
+## Violent flicker for a while: the entity is about to manifest, or the
+## hideout is giving way.
+func disturb(seconds: float) -> void:
+	_disturb_t = maxf(_disturb_t, seconds)
 
 ## Real-time omni shadows re-render the scene 6x per light; RoomGenerator
 ## turns them on only for the room the player is in.
@@ -132,8 +160,9 @@ func set_shadow(on: bool) -> void:
 ## cost measured on an integrated GPU.
 func set_fog_end(d: float) -> void:
 	if _mesh:
-		_mesh.visibility_range_end = d + VIS_MARGIN
-		_fixture.visibility_range_end = d + VIS_MARGIN
+		for mi in get_children():
+			if mi is MeshInstance3D:
+				mi.visibility_range_end = d + VIS_MARGIN
 		_light.distance_fade_begin = d - 2.0
 
 func _instance(mesh: Mesh) -> MeshInstance3D:
@@ -195,6 +224,7 @@ static func prewarm() -> void:
 	for lw in range(DimensionState.W_MIN, DimensionState.W_MAX + 1):
 		for kind: String in KINDS:
 			layer_material(lw, kind)
+		hideout_geometry(lw)
 		for bits in 16:
 			var e: Array[bool] = [bits & 1 != 0, bits & 2 != 0, bits & 4 != 0, bits & 8 != 0]
 			for v in VARIANTS:
@@ -253,6 +283,47 @@ func _commit(pieces: Dictionary, with_materials: bool) -> ArrayMesh:
 		if with_materials:
 			mesh.surface_set_material(mesh.get_surface_count() - 1, layer_material(w, kind))
 	return mesh
+
+static func hideout_geometry(lw: int) -> Dictionary:
+	if not _hideouts.has(lw):
+		var r := Room.new()
+		r.w = lw
+		r._pieces = {}
+		r._colliders = []
+		r._hideout_parts(DimensionState.LAYERS[lw].style)
+		_hideouts[lw] = {"mesh": r._commit(r._pieces, true), "colliders": r._colliders}
+		r.free()
+	return _hideouts[lw]
+
+## Closet in the reserved corner: x 3.25..4.75, z -4.75..-3.25, 3.2 m tall,
+## its back and one side being the room's own walls. The front has a slit
+## at eye height (2.6 m) to look out through. Dressed per world.
+func _hideout_parts(style: String) -> void:
+	var body: String = {"sedimento": "accent", "umbral": "accent", "carne": "accent", "eter": "wall", "estatica": "void"}[style]
+	var front: String = {"sedimento": "accent", "umbral": "wall", "carne": "floor", "eter": "accent", "estatica": "void"}[style]
+	var top := 3.2
+	var slit := Vector2(2.5, 2.7)
+	_box(Vector3(1.5, top, 0.1), Vector3(4.0, top / 2.0, -3.3), body, true) # side
+	_box(Vector3(1.5, 0.1, 1.5), Vector3(4.0, top - 0.05, -4.0), body) # roof
+	_box(Vector3(0.1, slit.x, 1.4), Vector3(3.3, slit.x / 2.0, -4.05), front) # door, below the slit
+	_box(Vector3(0.1, top - slit.y, 1.4), Vector3(3.3, (top + slit.y) / 2.0, -4.05), front) # above it
+	_box(Vector3(0.1, top, 1.4), Vector3(3.3, top / 2.0, -4.05), "", true)
+	match style:
+		"sedimento": # metal locker: vent slats
+			for y: float in [1.9, 2.05, 2.2]:
+				_box(Vector3(0.03, 0.04, 1.0), Vector3(3.24, y, -4.05), "grate")
+		"umbral": # office cabinet: a handle and a seam between two doors
+			_box(Vector3(0.04, 0.3, 0.04), Vector3(3.23, 1.4, -3.95), "dark")
+			_box(Vector3(0.02, slit.x, 0.02), Vector3(3.24, slit.x / 2.0, -4.05), "dark")
+		"carne": # cavity between ribs: two ribs frame it
+			for z: float in [-3.3, -4.7]:
+				_box(Vector3(0.35, top + 0.4, 0.25), Vector3(3.2, (top + 0.4) / 2.0, z), "accent")
+		"eter": # niche: its broken outline glows like the walls' tops
+			_box(Vector3(0.12, 0.05, 1.5), Vector3(3.3, top, -4.0), "trim")
+		"estatica": # a black hole in the room, drawn by its edges
+			for z: float in [-3.3, -4.72]:
+				_box(Vector3(0.05, top, 0.05), Vector3(3.24, top / 2.0, z), "edge")
+			_box(Vector3(0.05, 0.05, 1.5), Vector3(3.24, top, -4.0), "edge")
 
 static func _shape(size: Vector3) -> BoxShape3D:
 	if not _box_shapes.has(size):
@@ -322,6 +393,10 @@ func _wall(seg: Dictionary, height: float) -> void:
 func _strip(seg: Dictionary, y: float, height: float, depth: float, kind: String) -> void:
 	_box(_sized(seg, _len(seg), height, depth), _at(seg, _mid(seg), WALL_THICKNESS / 2.0 + depth / 2.0, y), kind)
 
+## Inside the hideout corner (kept clear in every room).
+func _reserved(p: Vector3) -> bool:
+	return p.x > 3.0 and p.z < -3.0
+
 func _floor(kind: String) -> void:
 	_box(Vector3(ROOM_SIZE, WALL_THICKNESS, ROOM_SIZE), Vector3(0, -WALL_THICKNESS / 2.0, 0), kind, true)
 
@@ -346,8 +421,9 @@ func _carne(h: float) -> void:
 		_strip(seg, TRIM_HEIGHT, 0.08, 0.06, "trim")
 		for a in range(-4, 5):
 			# Clear of door jambs (>= 0.3 m from a segment's end).
-			if a > seg.from + 0.3 and a < seg.to - 0.3:
-				_box(_sized(seg, 0.22, h, depth), _at(seg, a, WALL_THICKNESS / 2.0 + depth / 2.0, h / 2.0), "accent", true)
+			var at := _at(seg, a, WALL_THICKNESS / 2.0 + depth / 2.0, h / 2.0)
+			if a > seg.from + 0.3 and a < seg.to - 0.3 and not _reserved(at):
+				_box(_sized(seg, 0.22, h, depth), at, "accent", true)
 	# Arches across the room, stepping down to the east/west ribs.
 	for z: float in [-3.0, 0.0, 3.0]:
 		for step: Array in [[INNER, 3.75, 1.6], [3.75, 2.5, 1.0], [2.5, 1.25, 0.6], [1.25, 0.0, 0.35]]:
@@ -371,9 +447,8 @@ func _sedimento(h: float) -> void:
 		_box(Vector3(ROOM_SIZE - WALL_THICKNESS, s, s), Vector3(0, y, z), "accent")
 		for x: float in [-3.0, 0.0, 3.0]:
 			_box(Vector3(0.12, s + 0.1, s + 0.1), Vector3(x, y, z), "accent")
-	# The corners opposite the portal diagonal: off the walkway, off the portals.
-	var spots := [Vector3(3.0, 0, -3.0), Vector3(-3.0, 0, 3.0)]
-	for p: Vector3 in spots.slice(0, 1 + variant % 2):
+	# The one corner that's neither walkway, portal nor hideout.
+	for p: Vector3 in [Vector3(-3.0, 0, 3.0)]:
 		_box(Vector3(0.7, h, 0.7), p + Vector3(0, h / 2.0, 0), "accent", true)
 		_box(Vector3(1.0, 0.35, 1.0), p + Vector3(0, 0.175, 0), "accent", true)
 		_box(Vector3(1.0, 0.35, 1.0), p + Vector3(0, h - 0.175, 0), "accent")
@@ -448,7 +523,9 @@ func _estatica(h: float) -> void:
 		var length := minf(_rng.randf_range(1.0, 2.5), _len(seg) - 0.4)
 		var along := _rng.randf_range(seg.from + 0.2 + length / 2.0, seg.to - 0.2 - length / 2.0)
 		var ph := _rng.randf_range(1.0, 3.0)
-		_box(_sized(seg, length, ph, 0.05), _at(seg, along, WALL_THICKNESS / 2.0 + 0.06, _rng.randf_range(1.0, h - 2.0 - ph / 2.0) + ph / 2.0), "glitch")
+		var at := _at(seg, along, WALL_THICKNESS / 2.0 + 0.06, _rng.randf_range(1.0, h - 2.0 - ph / 2.0) + ph / 2.0)
+		if not _reserved(at):
+			_box(_sized(seg, length, ph, 0.05), at, "glitch")
 	for k in 1 + variant % 2:
 		var s := _rng.randf_range(0.4, 1.0)
 		_box(Vector3.ONE * s, Vector3(_rng.randf_range(-3, 3), _rng.randf_range(3.5, 7.0), _rng.randf_range(-3, 3)), "glitch")

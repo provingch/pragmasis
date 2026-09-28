@@ -232,7 +232,7 @@ horizontal_alignment = 1
 [node name="Keys" type="Label" parent="UI/HudBar"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "WASD MOVER · SHIFT CORRER · ESC PAUSA"
+text = "WASD MOVER · SHIFT CORRER · E ESCONDERSE · ESC PAUSA"
 
 [node name="Scanlines" type="Control" parent="."]
 layout_mode = 1

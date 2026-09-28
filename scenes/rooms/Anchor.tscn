@@ -1,0 +1,44 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/rooms/Anchor.gd" id="1_anchor"]
+[ext_resource type="Script" path="res://scripts/monster/Tesseract.gd" id="2_tesseract"]
+[ext_resource type="Shader" path="res://shaders/tesseract.gdshader" id="3_shader"]
+[ext_resource type="AudioStream" path="res://audio/sfx/anchor_hum.wav" id="4_hum"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_anchor"]
+radius = 1.1
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_anchor"]
+render_priority = 0
+shader = ExtResource("3_shader")
+shader_parameter/energy = 0.75
+
+[node name="Anchor" type="Area3D"]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_anchor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+shape = SubResource("SphereShape3D_anchor")
+
+[node name="Tesseract" type="MultiMeshInstance3D" parent="."]
+transform = Transform3D(1.7, 0, 0, 0, 1.7, 0, 0, 0, 1.7, 0, 1.8, 0)
+material_override = SubResource("ShaderMaterial_anchor")
+cast_shadow = 0
+script = ExtResource("2_tesseract")
+
+[node name="Light" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+light_color = Color(0.29, 0.965, 0.149, 1)
+light_energy = 2.5
+omni_range = 8.0
+
+[node name="Hum" type="AudioStreamPlayer3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+stream = ExtResource("4_hum")
+volume_db = -4.0
+unit_size = 4.0
+max_distance = 40.0
+autoplay = true
+bus = &"SFX"

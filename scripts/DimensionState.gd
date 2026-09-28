@@ -66,7 +66,7 @@ const LAYERS := {
 		"rough": 0.75, "metal": 0.0, "noise": 0.5,
 		"trim": Color("d8fbff"), "light": Color("cfe9ff"), "light_energy": 1.4,
 		"fog": Color("020304"), "fog_begin": 6.0, "flicker": "glitch",
-		"threat": 0.6, "entity_speed": 1.6,
+		"threat": 0.6, "entity_speed": 1.25,
 	},
 }
 

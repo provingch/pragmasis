@@ -1,9 +1,12 @@
 extends Control
 
 ## Phase scanner — tactical telemetry terminal. White phosphor on a dead-CRT
-## substrate. Hazard red is reserved for the entity; terminal green is used
-## for exactly one thing: the "safe to cross" verdict. Layers are told apart
-## by label and line weight, not hue. Square corners only.
+## substrate. Hazard red is reserved for the entity; terminal green means
+## "the way out": the anchor and the "safe to cross" verdict. Layers are told
+## apart by label and line weight, not hue. Square corners only.
+##
+## Closed, it's the HUD: layer, sequence clock, stamina, hideout prompt,
+## and the centre-screen announcements.
 
 const BG := Color("0a0a0a")
 const FG := Color("eaeaea")
@@ -43,13 +46,70 @@ func _draw() -> void:
 # --- closed state -----------------------------------------------------------
 
 func _draw_compact() -> void:
+	var player := _player()
+	if player and player.hidden:
+		# Inside the closet: only the slit's band (eye level, straight
+		# ahead) lets light in. Without shadows the room light would
+		# otherwise wash its inner walls.
+		draw_rect(Rect2(0, 0, size.x, size.y * 0.41), Color(0, 0, 0, 0.88))
+		draw_rect(Rect2(0, size.y * 0.59, size.x, size.y * 0.41), Color(0, 0, 0, 0.88))
 	var w := DimensionState.player_w
 	var p := Vector2(24, size.y - 44)
+	var blink := 1.0 if fmod(_t, 0.5) < 0.25 else 0.25
 	_text(p, "W%+d // %s" % [w, DimensionState.LAYERS[w].name], FG, 13)
 	_text(p + Vector2(0, 18), "[TAB] ESCÁNER DE FASE", DIM, 11)
 	if _entity_hunting_here():
-		var blink := 1.0 if fmod(_t, 0.5) < 0.25 else 0.25
 		_text(p + Vector2(0, -20), "■ ENTIDAD EN TU FASE", Color(RED, blink), 11)
+	elif _omen():
+		_text(p + Vector2(0, -20), "▒ INTERFERENCIA", Color(FG, 0.4 + 0.6 * randf()), 11)
+	_draw_clock(blink)
+	if player:
+		_draw_stamina(Vector2(24, size.y - 92), player)
+		_draw_prompt(player)
+	if GameManager.banner_t > 0.0:
+		_draw_banner()
+
+func _draw_clock(blink: float) -> void:
+	if not GameManager.running:
+		return
+	var y := 30.0
+	if GameManager.is_collapsed:
+		_text(Vector2(0, y), "COLAPSO // LLEGÁ AL ANCLA", Color(RED, blink), 14, size.x, HORIZONTAL_ALIGNMENT_CENTER)
+		return
+	var tl := ceili(GameManager.time_left)
+	var low := GameManager.time_left < 30.0
+	var col := Color(RED, blink) if low else FG
+	_text(Vector2(0, y), "SECUENCIA %02d  //  %d:%02d" % [GameManager.sequence, tl / 60, tl % 60], col, 14, size.x, HORIZONTAL_ALIGNMENT_CENTER)
+
+## Ten blocks, dim while full; red and labelled when exhausted.
+func _draw_stamina(p: Vector2, player: Player) -> void:
+	if player.stamina >= 1.0 and player.exhausted <= 0.0:
+		return
+	var col := RED if player.exhausted > 0.0 else FG
+	_text(p, "AGOTADO" if player.exhausted > 0.0 else "ENERGÍA", col if player.exhausted > 0.0 else DIM, 10)
+	var filled := ceili(player.stamina * 10.0)
+	for i in 10:
+		var r := Rect2(p.x + 70 + i * 9, p.y - 7, 7, 6)
+		if i < filled:
+			draw_rect(r, col)
+		else:
+			draw_rect(r, DIM, false, 1.0)
+
+func _draw_prompt(player: Player) -> void:
+	var y := size.y - 110
+	if player.hidden:
+		var left := maxi(ceili(Player.HIDE_MAX - player.hide_t), 0)
+		var unstable := player.hide_t >= Player.HIDE_UNSTABLE
+		_text(Vector2(0, y), "[E] SALIR  //  ESTABILIDAD %02d S" % left, RED if unstable else FG, 13, size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	elif player.hideout_in_reach():
+		_text(Vector2(0, y), "[E] ESCONDERSE", FG, 13, size.x, HORIZONTAL_ALIGNMENT_CENTER)
+
+func _draw_banner() -> void:
+	var a := clampf(GameManager.banner_t / 0.4, 0.0, 1.0) * clampf((GameManager.BANNER_TIME - GameManager.banner_t) / 0.15, 0.0, 1.0)
+	var y := size.y * 0.38
+	draw_rect(Rect2(0, y - 52, size.x, 76), Color(0, 0, 0, 0.7 * a))
+	var col := RED if GameManager.is_collapsed else GREEN
+	draw_string(Fonts.heavy, Vector2(0, y), GameManager.banner, HORIZONTAL_ALIGNMENT_CENTER, size.x, 44, Color(col, a))
 
 # --- open device ------------------------------------------------------------
 
@@ -95,13 +155,19 @@ func _draw_side() -> void:
 		"SEÑAL   %s" % _noise_string(6),
 	]
 	for i in rows.size():
-		_text(Vector2(16, HEADER_H + 140 + i * 18), rows[i], DIM, 11)
+		_text(Vector2(16, HEADER_H + 132 + i * 16), rows[i], DIM, 11)
+	# The way out: cells to go and the anchor's layer.
+	var to := RoomGenerator.anchor_cell - cell
+	var aw := RoomGenerator.anchor_w
+	_text(Vector2(16, HEADER_H + 188), "ANCLA   ΔX%+d ΔZ%+d" % [to.x, to.y], GREEN, 11)
+	var where := "EN TU FASE" if aw == w else "EN W%+d // %s" % [aw, DimensionState.LAYERS[aw].name]
+	_text(Vector2(16, HEADER_H + 204), where, GREEN if aw == w else FG, 10)
 	# Threat meter: this world's intrinsic hostility, 5 blocks = x2.0.
 	var threat: float = DimensionState.LAYERS[w].threat
 	var blocks := clampi(roundi(threat * 2.5), 1, 5)
-	_text(Vector2(16, HEADER_H + 200), "AMENAZA x%.1f" % threat, RED if threat > 1.0 else FG, 11)
+	_text(Vector2(16, HEADER_H + 230), "AMENAZA x%.1f" % threat, RED if threat > 1.0 else FG, 11)
 	for i in 5:
-		var r := Rect2(16 + i * 14, HEADER_H + 208, 10, 8)
+		var r := Rect2(16 + i * 14, HEADER_H + 238, 10, 8)
 		if i < blocks:
 			draw_rect(r, RED if threat > 1.0 else FG)
 		else:
@@ -160,6 +226,10 @@ func _draw_layer_contents(p0: Vector2, w: int, here: bool) -> void:
 			var glyphs := ("▲" if room.phase_positive else "") + ("▼" if room.phase_negative else "")
 			if glyphs != "":
 				_text(c + Vector2(-h + 4, -h + 12), glyphs, col, 9)
+			if room.hideout: # its corner: +x (right), -z (up)
+				draw_rect(Rect2(c + Vector2(h - 9, -h + 3), Vector2(6, 6)), col, false, 1.0)
+			if room.has_anchor:
+				draw_rect(Rect2(c - Vector2(4, 4), Vector2(8, 8)), GREEN)
 	for a in range(1, n):
 		for b in range(1, n):
 			var k := p0 + Vector2(a, b) * CELL
@@ -168,6 +238,14 @@ func _draw_layer_contents(p0: Vector2, w: int, here: bool) -> void:
 
 	# Panel coordinates are relative to the player's cell centre.
 	var origin := center - Vector2(cell) * CELL
+	var to := Vector2(RoomGenerator.anchor_cell - cell)
+	if here and to.length() > 0.0:
+		# Arrow toward the anchor, from the edge of the window.
+		var dir := to.normalized()
+		var tip := center + dir * CELL * (r + 0.5) * 0.92
+		var back := tip - dir * 12.0
+		draw_line(center + dir * 10.0, tip, Color(GREEN, 0.6), 1.0)
+		draw_colored_polygon(PackedVector2Array([tip, back + dir.orthogonal() * 5.0, back - dir.orthogonal() * 5.0]), GREEN)
 	if here:
 		var player := get_tree().get_first_node_in_group("player") as Node3D
 		if player and fmod(_t, 0.8) < 0.6:
@@ -233,6 +311,11 @@ func _draw_sweep() -> void:
 			draw_line(Vector2(xi, HEADER_H + 1), Vector2(xi, DEVICE.y - FOOTER_H - 1), Color(FG, 0.35 / (i + 1)), 1.0)
 
 func _draw_degradation() -> void:
+	if _omen():
+		# Something is folding in: bands of static.
+		for i in 10:
+			var band := Rect2(0, randf() * DEVICE.y, DEVICE.x, randf_range(1.0, 5.0))
+			draw_rect(band, Color(FG, randf_range(0.05, 0.3)))
 	var y := 0.0
 	while y < DEVICE.y:
 		draw_line(Vector2(0, y), Vector2(DEVICE.x, y), Color(0, 0, 0, 0.22), 1.0)
@@ -244,6 +327,13 @@ func _draw_degradation() -> void:
 
 func _text(pos: Vector2, s: String, col: Color, fs: int, width := -1.0, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
 	draw_string(Fonts.mono, pos, s.to_upper(), align, width, fs, col)
+
+func _player() -> Player:
+	return get_tree().get_first_node_in_group("player") as Player
+
+func _omen() -> bool:
+	var m := _monster()
+	return m != null and m.omen_left > 0.0
 
 func _monster() -> Monster:
 	return get_tree().get_first_node_in_group("monster") as Monster

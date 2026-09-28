@@ -1,6 +1,6 @@
 shader_type canvas_item;
 
-uniform sampler2D screen_tex : hint_screen_texture, filter_linear_mipmap;
+uniform sampler2D screen_tex : hint_screen_texture, filter_linear; // no mipmaps: only level 0 is read, and building the screen's mip chain cost ~2.4 ms per frame (integrated GPU)
 uniform float danger : hint_range(0.0, 1.0) = 0.0; // entity proximity * coherence
 uniform float shift : hint_range(0.0, 1.0) = 0.0;  // phase-jump transition
 uniform vec4 tint : source_color = vec4(1.0);      // destination layer color

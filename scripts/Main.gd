@@ -6,6 +6,7 @@ const OPTIONS := preload("res://scenes/ui/Options.tscn")
 @onready var player: Node3D = $Player
 
 func _ready() -> void:
+	GameManager.start_run()
 	RoomGenerator.init_world(rooms_root, player, DimensionState.player_w)
 
 ## ESC pauses into the options screen; closing it resumes.

@@ -1,8 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://dqx1m3n8v2t5b"]
+[gd_scene load_steps=6 format=3 uid="uid://dqx1m3n8v2t5b"]
 
 [ext_resource type="Script" path="res://scripts/player/Player.gd" id="1_player"]
 [ext_resource type="AudioStream" path="res://audio/sfx/steps_walk.tres" id="2_walk"]
 [ext_resource type="AudioStream" path="res://audio/sfx/steps_run.tres" id="3_run"]
+[ext_resource type="AudioStream" path="res://audio/sfx/breath.wav" id="4_breath"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -29,4 +30,9 @@ bus = &"SFX"
 [node name="StepsRun" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("3_run")
 volume_db = -3.0
+bus = &"SFX"
+
+[node name="Breath" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("4_breath")
+volume_db = -80.0
 bus = &"SFX"
