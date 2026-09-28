@@ -76,6 +76,7 @@ static func _sample(keys: Array, t: float) -> Array:
 
 func _new_game() -> void:
 	DimensionState.reset()
+	AudioManager.reset()
 	get_tree().change_scene_to_file(GAME)
 
 ## Placeholder entries answer in the subtitle line.
