@@ -41,15 +41,16 @@ func _ready() -> void:
 func is_hunting() -> bool:
 	return state == State.CHASE
 
-## 1.0 when on the player's layer, 0.0 at max w distance.
+## 1.0 on the player's layer, halving per layer away: a neighbour stays a
+## real threat (0.5, as it was with 3 layers) without matching your own,
+## and far layers fade out instead of hitting a hard zero.
 func coherence() -> float:
-	return 1.0 - float(absi(entity_w - DimensionState.player_w)) / float(DimensionState.W_SPAN)
+	return pow(0.5, absi(entity_w - DimensionState.player_w))
 
 ## Delay under current conditions: nearer in w and a more hostile world
 ## (the one the player is in right now) both shorten it.
 func spawn_delay() -> float:
 	var threat: float = DimensionState.LAYERS[DimensionState.player_w].threat
-	# ponytail: linear in w-distance; reshape the curve if tuning needs it
 	return lerpf(MAX_SPAWN_DELAY, MIN_SPAWN_DELAY, coherence()) / threat
 
 # Single entry to IDLE, so "not hunting => can't catch" holds by construction.
@@ -116,7 +117,8 @@ func _process(delta: float) -> void:
 func _physics_process(_delta: float) -> void:
 	if state != State.CHASE:
 		return
-	var speed := CHASE_SPEED * lerpf(0.4, 1.0, coherence()) * (0.85 + 0.15 * sin(_phase_angle))
+	var world_speed: float = DimensionState.LAYERS[DimensionState.player_w].entity_speed
+	var speed := CHASE_SPEED * world_speed * lerpf(0.4, 1.0, coherence()) * (0.85 + 0.15 * sin(_phase_angle))
 	var to_player := _player.global_position - global_position
 	to_player.y = 0.0
 	velocity = to_player.normalized() * speed

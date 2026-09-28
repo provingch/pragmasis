@@ -17,7 +17,7 @@ const PORTAL_CHANCE := 1.0 / 12.0
 ## Doors beyond the one every cell is guaranteed (see edge_open).
 const EXTRA_DOOR_CHANCE := 0.3
 
-enum Salt { CARVE, EAST, SOUTH, PORTAL, PORTAL_DIR }
+enum Salt { CARVE, EAST, SOUTH, PORTAL, PORTAL_DIR, STYLE }
 
 ## Radii are Chebyshev distances in cells, set by Settings (set_radii).
 ## Cells within gen_radius of the player always exist.
@@ -42,7 +42,7 @@ func init_world(parent: Node3D, player: Node3D, start_w: int) -> void:
 	rooms.clear()
 
 	world_seed = randi()
-	Room.prewarm_materials()
+	Room.prewarm()
 	_parent = parent
 	_player = player
 	active_w = start_w
@@ -126,6 +126,7 @@ func _create(x: int, z: int, w: int) -> void:
 	var room := ROOM_SCENE.instantiate() as Room
 	room.exits = exits_for(x, z)
 	room.w = w
+	room.variant = int(_rand(x, z, w, Salt.STYLE) * Room.VARIANTS)
 	var dir := portal_dir(x, z, w)
 	room.phase_positive = dir == 1
 	room.phase_negative = dir == -1

@@ -17,6 +17,8 @@ const SILENT_DB := -80.0
 ## these live: tools/loop_music.py finds them (and bakes the crossfade that
 ## makes the jump seamless) and prints them; paste the output here.
 const LOOP_OFFSETS := {
+	"carne": 5.693990,
+	"estatica": 3.387344,
 	"sedimento": 3.727927,
 	"umbral": 8.605240,
 	"eter": 8.374719,
@@ -35,9 +37,11 @@ const SFX := {
 
 @onready var chase_player: AudioStreamPlayer = $ChasePlayer
 @onready var ambient_players: Dictionary[int, AudioStreamPlayer] = {
+	-2: $AmbientCarne,
 	-1: $AmbientSedimento,
 	0: $AmbientUmbral,
 	1: $AmbientEter,
+	2: $AmbientEstatica,
 }
 
 ## Layer whose ambient plays (or will, once the chase ends).

@@ -4,7 +4,9 @@
 # ///
 """Seamless loops for the music: tools/music_src/*.mp3 -> audio/music/*.ogg.
 
-    uv run tools/loop_music.py          (needs ffmpeg with libvorbis)
+    uv run tools/loop_music.py [track ...]   (needs ffmpeg with libvorbis)
+
+With no arguments, every track in TRACKS.
 
 Every track fades in and out, so looping the whole file jumps from a fade
 through silence into an intro. For each track this picks a loop start S
@@ -26,7 +28,7 @@ import numpy as np
 
 SR = 48000
 ROOT = Path(__file__).resolve().parent.parent
-TRACKS = ["sedimento", "umbral", "eter", "persecucion"]
+TRACKS = ["carne", "sedimento", "umbral", "eter", "estatica", "persecucion"]
 HOP = 1024
 CONTEXT = 2.0     # seconds compared before each candidate point
 XFADE = 1.0       # seconds of crossfade baked in before E
@@ -114,5 +116,6 @@ def process(name: str) -> tuple[float, float, float]:
 
 
 if __name__ == "__main__":
-    for t in TRACKS:
+    import sys
+    for t in sys.argv[1:] or TRACKS:
         process(t)

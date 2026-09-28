@@ -1,13 +1,20 @@
-[gd_scene load_steps=6 format=3 uid="uid://bqx8n2m4v1w3a"]
+[gd_scene load_steps=8 format=3 uid="uid://bqx8n2m4v1w3a"]
 
 [ext_resource type="Script" path="res://scripts/AudioManager.gd" id="1_audio"]
 [ext_resource type="AudioStream" path="res://audio/music/sedimento.ogg" id="2_sedimento"]
 [ext_resource type="AudioStream" path="res://audio/music/umbral.ogg" id="3_umbral"]
 [ext_resource type="AudioStream" path="res://audio/music/eter.ogg" id="4_eter"]
 [ext_resource type="AudioStream" path="res://audio/music/persecucion.ogg" id="5_chase"]
+[ext_resource type="AudioStream" path="res://audio/music/carne.ogg" id="6_carne"]
+[ext_resource type="AudioStream" path="res://audio/music/estatica.ogg" id="7_estatica"]
 
 [node name="AudioManager" type="Node"]
 script = ExtResource("1_audio")
+
+[node name="AmbientCarne" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("6_carne")
+volume_db = -80.0
+bus = &"Music"
 
 [node name="AmbientSedimento" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("2_sedimento")
@@ -21,6 +28,11 @@ bus = &"Music"
 
 [node name="AmbientEter" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("4_eter")
+volume_db = -80.0
+bus = &"Music"
+
+[node name="AmbientEstatica" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("7_estatica")
 volume_db = -80.0
 bus = &"Music"
 
