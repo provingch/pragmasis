@@ -1,15 +1,16 @@
 extends Node
 
-## Autoload. Streams an unbounded room lattice keyed by Vector4i(x, y, z, w)
-## around the player's cell. y is fixed at 0 (no floors yet); w is a
-## world id (see Worlds). Each (x, z) is always generated for every world
-## at once, so a portal anywhere has a ready destination. Only the active
-## world is attached to the tree (renders/collides); detached rooms keep
-## their exits/portal flags readable for the scanner.
+## Autoload. Streams an unbounded room lattice around the player's cell, for
+## the active world only (w: a Worlds id). Every other world exists as data:
+## a cell's doors, portal and hideout come from a hash of the world seed and
+## its coordinates (exits_for, link_of, has_hideout), so the scanner and the
+## portals read any world without a single node, and a freed cell rebuilds
+## identically. Rooms near the player are built at once, the rest over the
+## next frames within BUILD_BUDGET_MS.
 ##
-## Everything about a cell (doors, portals, hideouts) comes from a hash of
-## the world seed and its coordinates, so a freed cell regenerates
-## identically and both sides of a shared wall always agree.
+## Worlds are warmed up before they're needed: the active one fully at
+## load, then the destinations of nearby portals and fissures, a material
+## or a room shape at a time (WARM_BUDGET_MS per frame).
 ##
 ## Each sequence has an anchor (the exit) 8-12 rooms away, one stratum
 ## deeper than the last (see GameManager.anchor_stratum), with a maze path
@@ -34,6 +35,13 @@ const ANCHOR_MAX := 12.0
 ## rooms (searching a box around start and target, ANCHOR_MARGIN wider).
 const ANCHOR_MAX_PATH := 40
 const ANCHOR_MARGIN := 6
+## Rooms within this (Chebyshev) distance are built the moment they're
+## needed; farther ones wait in line, nearest first. 0: only the one you're
+## standing in (after a portal, the rest arrive within a few frames, behind
+## the crossing's tear effect; a cold world's 9 at once cost up to ~24 ms).
+const BUILD_NOW := 0
+const BUILD_BUDGET_MS := 3.0
+const WARM_BUDGET_MS := 2.0
 
 enum Salt { CARVE, EAST, SOUTH, PORTAL, PORTAL_DIR, STYLE, HIDEOUT, BEACON, ANCHOR }
 
@@ -46,7 +54,8 @@ var free_radius := 6
 ## the room you're in (one omni shadow instead of ~9); -1 = none.
 var shadow_radius := 0
 
-var rooms: Dictionary[Vector4i, Room] = {}
+## The active world's rooms.
+var rooms: Dictionary[Vector2i, Room] = {}
 var active_w := 0
 var world_seed := 0
 var anchor_cell := Vector2i.ZERO
@@ -55,16 +64,21 @@ var anchor_w := 0
 var _parent: Node3D
 var _player: Node3D
 var _center := Vector2i.ZERO
+var _pending: Array[Vector2i] = [] # cells waiting to be built, nearest first
+var _warm_steps: Array[Callable] = []
+var _warm_queued := {} # world id -> true
 
 func init_world(parent: Node3D, player: Node3D, start_w: int) -> void:
-	# Autoloads survive reload_current_scene(); drop the previous run's rooms.
-	_free_detached_rooms()
-	rooms.clear()
-
-	Room.prewarm()
+	_clear_rooms()
 	_parent = parent
 	_player = player
 	active_w = start_w
+	# The world you start in, whole, now (level load); the rest trickles in.
+	Room._grime_texture(start_w, true)
+	_queue_warm(start_w)
+	for step in _warm_steps:
+		step.call()
+	_warm_steps.clear()
 	_reseed()
 
 func _ready() -> void:
@@ -73,14 +87,7 @@ func _ready() -> void:
 ## New sequence: a new world (and anchor) around the player, who stands on
 ## the old anchor, at a room centre: walkway in every layout.
 func regenerate() -> void:
-	for room in rooms.values():
-		if not is_instance_valid(room):
-			continue
-		if room.is_inside_tree():
-			room.queue_free()
-		else:
-			room.free()
-	rooms.clear()
+	_clear_rooms()
 	_reseed()
 
 func _reseed() -> void:
@@ -96,23 +103,37 @@ func _process(_delta: float) -> void:
 	if c != _center:
 		_center = c
 		_stream()
+	var t0 := Time.get_ticks_usec()
+	while not _pending.is_empty() and (Time.get_ticks_usec() - t0) / 1000.0 < BUILD_BUDGET_MS:
+		_build(_pending.pop_front())
+	if not _pending.is_empty():
+		return # one budget per frame: warm-ups wait for the rooms
+	while not _warm_steps.is_empty():
+		_warm_steps.pop_front().call()
+		if (Time.get_ticks_usec() - t0) / 1000.0 >= WARM_BUDGET_MS:
+			break
 
+# Cached meshes, materials and textures are static: drop them while the
+# rendering server is still up.
 func _exit_tree() -> void:
-	_free_detached_rooms()
+	Room.clear_caches()
 
-# Detached layers aren't owned by the scene, so nothing else frees them.
-func _free_detached_rooms() -> void:
+func _clear_rooms() -> void:
 	for room in rooms.values():
-		if is_instance_valid(room) and not room.is_inside_tree():
-			room.free()
+		if is_instance_valid(room):
+			room.queue_free()
+	rooms.clear()
+	_pending.clear()
 
+## Through a portal: this world's rooms go, the new one's come in (the few
+## around the player at once, the rest over the next frames).
 func switch_layer(new_w: int) -> void:
 	if new_w == active_w:
 		return
-	_set_layer_attached(active_w, false)
+	_clear_rooms()
 	active_w = new_w
-	_set_layer_attached(active_w, true)
-	_update_rooms()
+	_queue_warm(new_w)
+	_stream()
 
 ## Applied live: a running world grows/shrinks to the new radii right away.
 func set_radii(gen: int, free: int, shadow: int) -> void:
@@ -128,9 +149,9 @@ func set_radii(gen: int, free: int, shadow: int) -> void:
 func fog_end() -> float:
 	return (gen_radius + 0.4) * Room.ROOM_SIZE
 
+## The active world's room at pos (null in any other world: those have no rooms).
 func room_at(pos: Vector3, w: int) -> Room:
-	var c := cell_of(pos)
-	return rooms.get(Vector4i(c.x, 0, c.y, w))
+	return rooms.get(cell_of(pos)) if w == active_w else null
 
 static func cell_of(pos: Vector3) -> Vector2i:
 	return Vector2i(roundi(pos.x / Room.ROOM_SIZE), roundi(pos.z / Room.ROOM_SIZE))
@@ -138,58 +159,60 @@ static func cell_of(pos: Vector3) -> Vector2i:
 # --- streaming -----------------------------------------------------------------
 
 func _stream() -> void:
-	# ponytail: a border crossing builds up to (2 * gen_radius + 1) cells x 3 layers in one frame (a radius change, the whole ring); spread over frames if it hitches
+	var far: Array[Vector2i] = []
+	for c in rooms:
+		if _dist(c) > free_radius:
+			far.append(c)
+	for c in far:
+		# queue_free: some of these may be mid-frame.
+		rooms[c].queue_free()
+		rooms.erase(c)
+	_pending.clear()
 	for dx in range(-gen_radius, gen_radius + 1):
 		for dz in range(-gen_radius, gen_radius + 1):
-			var x := _center.x + dx
-			var z := _center.y + dz
-			if rooms.has(Vector4i(x, 0, z, active_w)):
-				continue
-			for w in Worlds.ids():
-				_create(x, z, w)
-
-	var far: Array[Vector4i] = []
-	for coord in rooms:
-		if maxi(absi(coord.x - _center.x), absi(coord.z - _center.y)) > free_radius:
-			far.append(coord)
-	for coord in far:
-		# queue_free: some of these are attached and may be mid-frame.
-		rooms[coord].queue_free()
-		rooms.erase(coord)
+			var c := _center + Vector2i(dx, dz)
+			if not rooms.has(c):
+				_pending.append(c)
+	_pending.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return _dist(a) < _dist(b))
+	while not _pending.is_empty() and _dist(_pending[0]) <= BUILD_NOW:
+		_build(_pending.pop_front())
+	# Warm up whatever the portals and fissures around here lead to.
+	for dx in range(-gen_radius - 1, gen_radius + 2):
+		for dz in range(-gen_radius - 1, gen_radius + 2):
+			var t := link_of(_center.x + dx, _center.y + dz, active_w).x
+			if t >= 0:
+				_queue_warm(t)
 	_update_rooms()
+
+func _dist(c: Vector2i) -> int:
+	return maxi(absi(c.x - _center.x), absi(c.y - _center.y))
+
+func _build(c: Vector2i) -> void:
+	var room := ROOM_SCENE.instantiate() as Room
+	room.exits = exits_for(c.x, c.y)
+	room.w = active_w
+	room.variant = int(_rand(c.x, c.y, active_w, Salt.STYLE) * Room.VARIANTS)
+	room.has_anchor = active_w == anchor_w and c == anchor_cell
+	room.hideout = has_hideout(c.x, c.y, active_w)
+	var link := link_of(c.x, c.y, active_w)
+	room.link_target = link.x
+	room.link_fissure = link.y == 1
+	room.position = Vector3(c.x * Room.ROOM_SIZE, 0, c.y * Room.ROOM_SIZE)
+	rooms[c] = room
+	_parent.add_child(room)
+	room.set_shadow(_dist(c) <= shadow_radius)
+	room.set_fog_end(fog_end())
 
 func _update_rooms() -> void:
 	var fog := fog_end()
-	for coord in rooms:
-		if coord.w == active_w:
-			var room := rooms[coord]
-			room.set_shadow(maxi(absi(coord.x - _center.x), absi(coord.z - _center.y)) <= shadow_radius)
-			room.set_fog_end(fog)
+	for c in rooms:
+		rooms[c].set_shadow(_dist(c) <= shadow_radius)
+		rooms[c].set_fog_end(fog)
 
-func _create(x: int, z: int, w: int) -> void:
-	var room := ROOM_SCENE.instantiate() as Room
-	room.exits = exits_for(x, z)
-	room.w = w
-	room.variant = int(_rand(x, z, w, Salt.STYLE) * Room.VARIANTS)
-	room.has_anchor = w == anchor_w and Vector2i(x, z) == anchor_cell
-	room.hideout = has_hideout(x, z, w)
-	var link := link_of(x, z, w)
-	room.link_target = link.x
-	room.link_fissure = link.y == 1
-	room.position = Vector3(x * Room.ROOM_SIZE, 0, z * Room.ROOM_SIZE)
-	rooms[Vector4i(x, 0, z, w)] = room
-	if w == active_w:
-		_parent.add_child(room)
-
-func _set_layer_attached(w: int, attached: bool) -> void:
-	for coord in rooms:
-		if coord.w != w:
-			continue
-		var room := rooms[coord]
-		if attached:
-			_parent.add_child(room)
-		else:
-			_parent.remove_child(room)
+func _queue_warm(w: int) -> void:
+	if not _warm_queued.has(w):
+		_warm_queued[w] = true
+		_warm_steps.append_array(Room.warm_steps(w))
 
 # --- deterministic layout -------------------------------------------------------
 

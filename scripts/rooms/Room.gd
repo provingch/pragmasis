@@ -37,7 +37,7 @@ const HIDE_REACH := 1.3
 const PHASE_PORTAL_SCENE := preload("res://scenes/rooms/PhasePortal.tscn")
 const ANCHOR_SCENE := preload("res://scenes/rooms/Anchor.tscn")
 const GLITCH_SHADER := preload("res://shaders/glitch.gdshader")
-## Every material kind a kit may use; prewarmed for every world.
+## Every material kind a kit may use; each world warms them all up.
 const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch"]
 
 enum Exit { NORTH, SOUTH, EAST, WEST }
@@ -54,7 +54,8 @@ var hideout := false
 var has_anchor := false
 
 static var _materials := {}
-static var _grime := {}
+static var _grime := {} # frequency -> ImageTexture
+static var _grime_tasks := {} # frequency -> WorkerThreadPool task id
 # Unit cube's arrays, scaled per box on the CPU. (Reading a Mesh's arrays
 # is a GPU readback with a sync: never per box.)
 static var _cube: Array = []
@@ -210,18 +211,26 @@ static func hideout_geometry(lw: int) -> Dictionary:
 		_hideouts[lw] = {"mesh": RoomBuilder.commit(b.pieces, lw, true), "colliders": b.colliders}
 	return _hideouts[lw]
 
-## Materials, their shaders and every room shape of every world, at level
-## load: first entry into a world then attaches ~100 rooms without building
-## anything.
-static func prewarm() -> void:
-	for lw in Worlds.ids():
-		for kind: String in KINDS:
-			layer_material(lw, kind)
-		hideout_geometry(lw)
-		for bits in 16:
-			var e: Array[bool] = [bits & 1 != 0, bits & 2 != 0, bits & 4 != 0, bits & 8 != 0]
-			for v in VARIANTS:
-				geometry(lw, e, v)
+## Everything a world needs before its rooms can appear without a hitch,
+## as small steps (one material, the hideout, one room shape each) that
+## RoomGenerator spreads over frames. Built things are cached, so running a
+## step twice costs nothing.
+static func warm_steps(lw: int) -> Array[Callable]:
+	var steps: Array[Callable] = []
+	for kind: String in KINDS:
+		steps.append(func() -> void: layer_material(lw, kind))
+	steps.append(func() -> void: hideout_geometry(lw))
+	for bits in 16:
+		var e: Array[bool] = [bits & 1 != 0, bits & 2 != 0, bits & 4 != 0, bits & 8 != 0]
+		for v in VARIANTS:
+			steps.append(func() -> void: geometry(lw, e, v))
+	return steps
+
+static func clear_caches() -> void:
+	for task: int in _grime_tasks.values():
+		WorkerThreadPool.wait_for_task_completion(task)
+	for cache: Dictionary in [_materials, _grime, _grime_tasks, _box_shapes, _built, _hideouts]:
+		cache.clear()
 
 static func unit_cube() -> Array:
 	if _cube.is_empty():
@@ -238,7 +247,7 @@ static func _shape(size: Vector3) -> BoxShape3D:
 # --- materials ----------------------------------------------------------------------
 
 ## Shared across all rooms of a world. Creating one on first use costs a
-## long frame; prewarm() makes them all at level load.
+## long frame; warm_steps() makes them ahead of time.
 static func layer_material(lw: int, kind: String) -> Material:
 	var key := "%d:%s" % [lw, kind]
 	if _materials.has(key):
@@ -279,17 +288,41 @@ static func layer_material(lw: int, kind: String) -> Material:
 	_materials[key] = mat
 	return mat
 
-## World-space noise (no seams between adjacent boxes), one per world.
-static func _grime_texture(lw: int) -> Texture2D:
-	if not _grime.has(lw):
-		var noise := FastNoiseLite.new()
-		noise.frequency = Worlds.def(lw).grime_frequency
-		noise.fractal_octaves = 5
-		var tex := NoiseTexture2D.new()
-		tex.noise = noise
-		tex.seamless = true
-		tex.color_ramp = Gradient.new()
-		tex.color_ramp.set_color(0, Color(0.72, 0.72, 0.72))
-		tex.color_ramp.set_color(1, Color(1, 1, 1))
-		_grime[lw] = tex
-	return _grime[lw]
+## World-space grime noise (no seams between adjacent boxes), one per
+## frequency: worlds that share it share the texture. Made on a worker
+## thread (a flat white 1x1 stands in until it's there): NoiseTexture2D does
+## its first generation on the main thread, ~100 ms for this one (measured
+## on the integrated GPU's host), a hitch every time a world warmed up.
+## `now`: generate right here (level load).
+static func _grime_texture(lw: int, now := false) -> Texture2D:
+	var f := Worlds.def(lw).grime_frequency
+	if not _grime.has(f):
+		var blank := Image.create_empty(1, 1, false, Image.FORMAT_L8)
+		blank.fill(Color.WHITE)
+		var tex := ImageTexture.create_from_image(blank)
+		_grime[f] = tex
+		if now:
+			tex.set_image(_grime_image(f))
+		else:
+			_grime_tasks[f] = WorkerThreadPool.add_task(func() -> void: _grime_ready.call_deferred(f, _grime_image(f)))
+	return _grime[f]
+
+static func _grime_ready(f: float, img: Image) -> void:
+	# Tasks must be waited on to release what they hold (here: the texture).
+	WorkerThreadPool.wait_for_task_completion(_grime_tasks[f])
+	_grime_tasks.erase(f)
+	if _grime.has(f):
+		_grime[f].set_image(img)
+
+## 512x512 seamless fractal noise, remapped to 0.72..1.0 grey, with mipmaps.
+static func _grime_image(frequency: float) -> Image:
+	var noise := FastNoiseLite.new()
+	noise.frequency = frequency
+	noise.fractal_octaves = 5
+	var img := noise.get_seamless_image(512, 512)
+	var data := img.get_data()
+	for i in data.size():
+		data[i] = 184 + data[i] * 71 / 255
+	img.set_data(512, 512, false, Image.FORMAT_L8, data)
+	img.generate_mipmaps()
+	return img

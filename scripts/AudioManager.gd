@@ -1,8 +1,11 @@
 extends Node
 
 ## Autoload. Music: one ambient MusicTrack per world (worlds may share
-## one) plus the chase track, all looping and mixed only by volume, so every
-## switch is a cross-fade. Loop points live in each track's .tres.
+## one) plus the chase track, looping and mixed only by volume, so every
+## switch is a cross-fade. Loop points live in each track's .tres. Only the
+## current world's track and its neighbours' (one portal or fissure away)
+## are loaded and playing; neighbours load on a thread, and tracks nobody
+## is next to anymore are dropped once faded out.
 ##
 ## Exactly one track dominates: the chase while the entity hunts, otherwise
 ## the ambient of the world the player is in. A world change mid-chase only
@@ -32,8 +35,10 @@ const SFX := {
 }
 
 var chase_player: AudioStreamPlayer
-## Track path -> its player.
+## Track path -> its player (loaded tracks only).
 var _music: Dictionary[String, AudioStreamPlayer] = {}
+## Track paths loading on a thread.
+var _loading := {}
 
 ## World whose ambient plays (or will, once the chase ends).
 var _active_w := 0
@@ -43,8 +48,6 @@ var _sfx: Dictionary[StringName, AudioStreamPlayer] = {}
 
 func _ready() -> void:
 	chase_player = _track_player(CHASE_TRACK)
-	for w in Worlds.ids():
-		_track_player(Worlds.def(w).music)
 	for key: StringName in SFX:
 		var p := AudioStreamPlayer.new()
 		p.stream = SFX[key]
@@ -54,13 +57,50 @@ func _ready() -> void:
 		add_child(p)
 		_sfx[key] = p
 	_active_w = DimensionState.player_w
+	_track_player(Worlds.def(_active_w).music)
+	_want_neighbours()
 	_mix(0.0)
 	DimensionState.layer_changed.connect(_on_layer_changed)
 
+func _process(_delta: float) -> void:
+	for path in _loading.keys():
+		if ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+			_loading.erase(path)
+			_track_player(path)
+			_mix(FADE_TIME)
+	# Drop tracks no longer next to the player, once silent.
+	if _fade and _fade.is_running():
+		return
+	var keep := _wanted()
+	for path in _music.keys():
+		var p := _music[path]
+		if p != chase_player and not keep.has(path) and p.volume_db <= SILENT_DB + 0.5:
+			_music.erase(path)
+			p.queue_free()
+
+## Track paths that should be loaded: here and one hop away.
+func _wanted() -> Dictionary:
+	var out := {Worlds.def(_active_w).music: true}
+	for n in Worlds.links(_active_w):
+		out[Worlds.def(n).music] = true
+	return out
+
+func _want_neighbours() -> void:
+	for path: String in _wanted():
+		if not _music.has(path) and not _loading.has(path):
+			ResourceLoader.load_threaded_request(path)
+			_loading[path] = true
+
 ## The (shared) player for a MusicTrack, created and started on first use.
+## Only call it once the track is loaded (or at load time): fetching a track
+## still loading on its thread blocks until it's done (~250 ms measured).
 func _track_player(path: String) -> AudioStreamPlayer:
 	if not _music.has(path):
-		var track := load(path) as MusicTrack
+		var track: MusicTrack
+		if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
+			track = ResourceLoader.load_threaded_get(path)
+		else:
+			track = load(path)
 		var ogg := track.stream as AudioStreamOggVorbis
 		ogg.loop = true
 		ogg.loop_offset = track.loop_offset
@@ -89,18 +129,23 @@ func stop_chase() -> void:
 func reset() -> void:
 	_chasing = false
 	_active_w = DimensionState.player_w
+	_track_player(Worlds.def(_active_w).music)
+	_want_neighbours()
 	_mix(0.0)
 
 func _on_layer_changed(new_w: int) -> void:
 	play_sfx(&"whoosh_down" if new_w > _active_w else &"whoosh_up")
 	_active_w = new_w
+	_want_neighbours()
 	_mix(FADE_TIME)
 
 ## Cross-fades every track toward its target: the dominant one up, the rest
 ## down. Starts from each player's current volume and replaces any fade in
 ## flight, so a switch mid-fade just turns around.
 func _mix(time: float) -> void:
-	var loud := chase_player if _chasing else _music[Worlds.def(_active_w).music]
+	# The world's track may still be loading (crossed right after arriving):
+	# then everything fades out and _process fades it in once it's there.
+	var loud: AudioStreamPlayer = chase_player if _chasing else _music.get(Worlds.def(_active_w).music)
 	if _fade:
 		_fade.kill()
 	if time <= 0.0:
