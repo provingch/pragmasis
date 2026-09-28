@@ -41,6 +41,7 @@ func init_world(parent: Node3D, player: Node3D, start_w: int) -> void:
 	rooms.clear()
 
 	world_seed = randi()
+	Room.prewarm_materials()
 	_parent = parent
 	_player = player
 	active_w = start_w

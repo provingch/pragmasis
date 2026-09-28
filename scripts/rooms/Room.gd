@@ -147,8 +147,8 @@ func set_shadow(on: bool) -> void:
 		_light.shadow_enabled = on
 
 func _build_floor_ceiling() -> void:
-	_box(Vector3(ROOM_SIZE, WALL_THICKNESS, ROOM_SIZE), Vector3(0, -WALL_THICKNESS / 2.0, 0), _layer_material("floor"))
-	_box(Vector3(ROOM_SIZE, WALL_THICKNESS, ROOM_SIZE), Vector3(0, ROOM_SIZE - WALL_THICKNESS / 2.0, 0), _layer_material("wall"))
+	_box(Vector3(ROOM_SIZE, WALL_THICKNESS, ROOM_SIZE), Vector3(0, -WALL_THICKNESS / 2.0, 0), layer_material(w, "floor"))
+	_box(Vector3(ROOM_SIZE, WALL_THICKNESS, ROOM_SIZE), Vector3(0, ROOM_SIZE - WALL_THICKNESS / 2.0, 0), layer_material(w, "wall"))
 
 func _build_walls() -> void:
 	_build_wall(Exit.NORTH, Vector3(0, ROOM_SIZE / 2.0, -ROOM_SIZE / 2.0), false)
@@ -169,12 +169,12 @@ func _build_wall(exit_dir: int, center: Vector3, is_side: bool) -> void:
 
 func _wall_segment(center: Vector3, length: float, is_side: bool) -> void:
 	var size := Vector3(WALL_THICKNESS, ROOM_SIZE, length) if is_side else Vector3(length, ROOM_SIZE, WALL_THICKNESS)
-	_box(size, center, _layer_material("wall"))
+	_box(size, center, layer_material(w, "wall"))
 	# Emissive baseboard strip on the inner face: the layer's signal color.
 	var inward := Vector3(-signf(center.x), 0, 0) if is_side else Vector3(0, 0, -signf(center.z))
 	var trim_size := Vector3(0.06, 0.08, length) if is_side else Vector3(length, 0.08, 0.06)
 	var trim_pos := Vector3(center.x, TRIM_HEIGHT, center.z) + inward * (WALL_THICKNESS / 2.0 + 0.03)
-	_box(trim_size, trim_pos, _layer_material("trim"), false)
+	_box(trim_size, trim_pos, layer_material(w, "trim"), false)
 
 func _build_light() -> void:
 	_light = OmniLight3D.new()
@@ -197,15 +197,23 @@ func _build_light() -> void:
 	_fixture_mat.emission = _style.light
 	_box(Vector3(2.4, 0.08, 0.5), Vector3(0, ROOM_SIZE - WALL_THICKNESS - 0.04, 0), _fixture_mat, false)
 
-func _layer_material(kind: String) -> StandardMaterial3D:
-	var key := "%d:%s" % [w, kind]
+## Creating a layer's materials on first entry costs a ~230 ms frame; call
+## this at level load so every layer's are ready before any portal.
+static func prewarm_materials() -> void:
+	for lw in range(DimensionState.W_MIN, DimensionState.W_MAX + 1):
+		for kind in ["wall", "floor", "trim"]:
+			layer_material(lw, kind)
+
+static func layer_material(lw: int, kind: String) -> StandardMaterial3D:
+	var key := "%d:%s" % [lw, kind]
 	if _materials.has(key):
 		return _materials[key]
+	var style: Dictionary = DimensionState.LAYERS[lw]
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = _style[kind]
+	mat.albedo_color = style[kind]
 	if kind == "trim":
 		mat.emission_enabled = true
-		mat.emission = _style.trim
+		mat.emission = style.trim
 		# Low enough that the tonemapper keeps the hue instead of clipping to white.
 		mat.emission_energy_multiplier = 1.1
 	else:
