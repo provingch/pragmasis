@@ -1,0 +1,101 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_r0h5o"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_auub6"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingArches.gd" id="3_1ajp6"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingPipes.gd" id="4_wlv1m"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="5_66ske"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorSlab.gd" id="6_uinj5"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorZones.gd" id="7_1tlwd"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="8_q3wls"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="9_8t2aa"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="10_xmbiw"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="11_0hhwi"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="12_e534a"]
+
+[sub_resource type="Resource" id="Resource_r0h5o"]
+script = ExtResource("1_r0h5o")
+
+[sub_resource type="Resource" id="Resource_auub6"]
+script = ExtResource("3_1ajp6")
+z_positions = PackedFloat32Array(-4, -2, 0, 2, 4)
+steps = Array[Vector3]([Vector3(4.75, 3.5, 1.6), Vector3(3.5, 2.2, 0.8), Vector3(2.2, 0, 0.3)])
+thickness = 0.4
+
+[sub_resource type="Resource" id="Resource_1ajp6"]
+script = ExtResource("4_wlv1m")
+lanes = PackedFloat32Array(-4.3, 4.3)
+count_min = 1
+count_max = 2
+drop_min = 1.4
+drop_max = 1.6
+flanges = PackedFloat32Array(-3, 0, 3)
+
+[sub_resource type="Resource" id="Resource_wlv1m"]
+script = ExtResource("5_66ske")
+size = Vector3(0.4, 0.15, 0.4)
+offset = -0.35
+
+[sub_resource type="Resource" id="Resource_66ske"]
+script = ExtResource("6_uinj5")
+kind = "dark"
+
+[sub_resource type="Resource" id="Resource_uinj5"]
+script = ExtResource("7_1tlwd")
+rects = Array[Rect2]([Rect2(-5, -5, 10, 10)])
+top = 0.14
+speed = 1.0
+
+[sub_resource type="Resource" id="Resource_1tlwd"]
+script = ExtResource("8_q3wls")
+dressing = 1
+
+[sub_resource type="Resource" id="Resource_q3wls"]
+script = ExtResource("9_8t2aa")
+lowpass_hz = 650.0
+reverb = 0.35
+reverb_room = 0.7
+
+[sub_resource type="Resource" id="Resource_8t2aa"]
+script = ExtResource("11_0hhwi")
+
+[sub_resource type="Resource" id="Resource_xmbiw"]
+script = ExtResource("12_e534a")
+y = 0.4
+height = 0.5
+depth = 0.03
+kind = "dark"
+
+[resource]
+script = ExtResource("10_xmbiw")
+id = &"drenaje"
+display_name = "DRENAJE"
+stratum = 1
+slot = 2
+wall_color = Color(0.3372549, 0.38039216, 0.29803923, 1)
+floor_color = Color(0.101960786, 0.11764706, 0.09019608, 1)
+accent_color = Color(0.41960785, 0.43137255, 0.34509805, 1)
+trim_color = Color(0.54901963, 0.9490196, 0.54901963, 1)
+light_color = Color(0.7529412, 0.9019608, 0.7019608, 1)
+fog_color = Color(0.039215688, 0.05882353, 0.039215688, 1)
+water_color = Color(0.18039216, 0.2509804, 0.15686275, 1)
+light_energy = 2.4
+light_y = 3.4
+flicker = "stutter"
+fog_begin = 4.5
+air = "drips"
+roughness = 0.6
+grime_frequency = 0.25
+height = 4.5
+floor_kit = SubResource("Resource_66ske")
+wall_kit = SubResource("Resource_8t2aa")
+wall_props = Array[ExtResource("2_auub6")]([SubResource("Resource_xmbiw")])
+ceiling_kit = SubResource("Resource_r0h5o")
+ceiling_props = Array[ExtResource("2_auub6")]([SubResource("Resource_auub6"), SubResource("Resource_1ajp6"), SubResource("Resource_wlv1m")])
+floor_props = Array[ExtResource("2_auub6")]([SubResource("Resource_uinj5")])
+hideout = SubResource("Resource_1tlwd")
+music = "res://audio/music/sedimento.tres"
+music_fx = SubResource("Resource_q3wls")
+threat = 1.5
+noise = 1.4
+player_speed = 0.78

@@ -1,0 +1,117 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=27 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_rgtqd"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_tlre6"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingPipes.gd" id="3_rraiw"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="4_rdsre"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorSlab.gd" id="5_lncmd"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorLines.gd" id="6_dk1pp"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorBlocks.gd" id="7_3pihv"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingHangers.gd" id="8_h0cqj"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="9_5a6vj"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="10_4yorb"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="11_gv7rj"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="12_yxy1s"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallRibs.gd" id="13_4iv02"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="14_t7rf2"]
+
+[sub_resource type="Resource" id="Resource_rgtqd"]
+script = ExtResource("1_rgtqd")
+
+[sub_resource type="Resource" id="Resource_tlre6"]
+script = ExtResource("3_rraiw")
+lanes = PackedFloat32Array(-4.1, -3.5, -2.9, 2.9, 3.5, 4.1)
+flanges = PackedFloat32Array(-3, 0, 3)
+
+[sub_resource type="Resource" id="Resource_rraiw"]
+script = ExtResource("4_rdsre")
+size = Vector3(1.6, 0.03, 1.6)
+offset = -0.58
+from_light = true
+
+[sub_resource type="Resource" id="Resource_rdsre"]
+script = ExtResource("5_lncmd")
+
+[sub_resource type="Resource" id="Resource_lncmd"]
+script = ExtResource("6_dk1pp")
+along_x = PackedFloat32Array(-2.6, 2.6)
+along_z = PackedFloat32Array(-2.6, 2.6)
+width = 0.35
+height = 0.03
+kind = "trim"
+
+[sub_resource type="Resource" id="Resource_dk1pp"]
+script = ExtResource("7_3pihv")
+count_min = 1
+count_max = 2
+size = Vector3(1.2, 1.4, 1.2)
+levels = 1
+level_kind = "grate"
+
+[sub_resource type="Resource" id="Resource_3pihv"]
+script = ExtResource("8_h0cqj")
+count_min = 3
+count_max = 6
+width_min = 0.06
+width_max = 0.1
+length_min = 1.0
+length_max = 3.5
+clearance = 3.0
+
+[sub_resource type="Resource" id="Resource_h0cqj"]
+script = ExtResource("9_5a6vj")
+dressing = 3
+
+[sub_resource type="Resource" id="Resource_5a6vj"]
+script = ExtResource("10_4yorb")
+lowpass_hz = 9000.0
+distortion = 0.35
+
+[sub_resource type="Resource" id="Resource_4yorb"]
+script = ExtResource("12_yxy1s")
+
+[sub_resource type="Resource" id="Resource_gv7rj"]
+script = ExtResource("13_4iv02")
+spacing = 1.5
+width = 0.3
+depth_min = 0.2
+depth_max = 0.3
+
+[sub_resource type="Resource" id="Resource_yxy1s"]
+script = ExtResource("14_t7rf2")
+y = 0.15
+height = 0.3
+kind = "grate"
+
+[resource]
+script = ExtResource("11_gv7rj")
+id = &"fundicion"
+display_name = "FUNDICIÓN"
+stratum = 1
+slot = 1
+wall_color = Color(0.2, 0.18039216, 0.16862746, 1)
+floor_color = Color(0.12156863, 0.105882354, 0.101960786, 1)
+accent_color = Color(0.2901961, 0.26666668, 0.24705882, 1)
+trim_color = Color(1, 0.41568628, 0.078431375, 1)
+light_color = Color(1, 0.4509804, 0.14901961, 1)
+fog_color = Color(0.12156863, 0.039215688, 0.011764706, 1)
+light_energy = 3.4
+light_y = 0.6
+flicker = "breathe"
+fog_begin = 5.0
+ambient = 0.2
+air = "sparks"
+roughness = 0.5
+metallic = 0.7
+height = 7.0
+floor_kit = SubResource("Resource_rdsre")
+wall_kit = SubResource("Resource_4yorb")
+wall_props = Array[ExtResource("2_tlre6")]([SubResource("Resource_gv7rj"), SubResource("Resource_yxy1s")])
+ceiling_kit = SubResource("Resource_rgtqd")
+ceiling_props = Array[ExtResource("2_tlre6")]([SubResource("Resource_tlre6"), SubResource("Resource_rraiw")])
+floor_props = Array[ExtResource("2_tlre6")]([SubResource("Resource_lncmd"), SubResource("Resource_dk1pp"), SubResource("Resource_3pihv")])
+hideout = SubResource("Resource_h0cqj")
+music = "res://audio/music/sedimento.tres"
+music_fx = SubResource("Resource_5a6vj")
+threat = 1.6
+stamina_drain = 1.9

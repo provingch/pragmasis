@@ -37,6 +37,8 @@ class_name WorldDef
 @export var fog_begin := 10.0
 ## Ambient light, in light_color.
 @export var ambient := 0.4
+## Particles drifting around the player (see AirParticles).
+@export_enum("none", "sparks", "snow", "dust", "drips") var air := "none"
 
 @export_group("Superficies")
 @export_range(0.0, 1.0) var roughness := 0.9
