@@ -1,0 +1,60 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_sc6x4"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_r0syu"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingTiles.gd" id="3_cdelu"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorSlab.gd" id="4_hq8we"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="5_0h86u"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="6_u6q7g"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="7_62s8q"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="8_kh6t0"]
+
+[sub_resource type="Resource" id="Resource_l5g7p"]
+script = ExtResource("1_sc6x4")
+kind = "dark"
+thickness = 0.3
+
+[sub_resource type="Resource" id="Resource_6xyky"]
+script = ExtResource("3_cdelu")
+
+[sub_resource type="Resource" id="Resource_l6p6x"]
+script = ExtResource("4_hq8we")
+
+[sub_resource type="Resource" id="Resource_g1gi2"]
+script = ExtResource("5_0h86u")
+front_kind = "wall"
+dressing = 2
+
+[sub_resource type="Resource" id="Resource_pu4ib"]
+script = ExtResource("7_62s8q")
+
+[sub_resource type="Resource" id="Resource_68vyy"]
+script = ExtResource("8_kh6t0")
+y = 0.175
+height = 0.35
+kind = "accent"
+
+[sub_resource type="Resource" id="Resource_g47n6"]
+script = ExtResource("8_kh6t0")
+y = 0.36
+height = 0.03
+depth = 0.07
+
+[resource]
+script = ExtResource("6_u6q7g")
+id = &"umbral"
+display_name = "UMBRAL"
+wall_color = Color(0.7254902, 0.7137255, 0.6509804, 1)
+floor_color = Color(0.41960785, 0.4117647, 0.36862746, 1)
+accent_color = Color(0.56078434, 0.54901963, 0.49411765, 1)
+trim_color = Color(0.24705882, 0.8784314, 0.78431374, 1)
+light_color = Color(0.9019608, 0.9490196, 0.91764706, 1)
+fog_color = Color(0.047058824, 0.078431375, 0.06666667, 1)
+roughness = 0.92
+floor_kit = SubResource("Resource_l6p6x")
+wall_kit = SubResource("Resource_pu4ib")
+wall_props = Array[ExtResource("2_r0syu")]([SubResource("Resource_68vyy"), SubResource("Resource_g47n6")])
+ceiling_kit = SubResource("Resource_l5g7p")
+ceiling_props = Array[ExtResource("2_r0syu")]([SubResource("Resource_6xyky")])
+hideout = SubResource("Resource_g1gi2")
+music = "res://audio/music/umbral.tres"

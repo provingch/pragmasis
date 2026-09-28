@@ -1,9 +1,10 @@
 extends Area3D
 class_name PhasePortal
 
-## Floating object inside a room (not a wall opening). Touching it shifts
-## the player's w by `direction`; x/z stay put since every layer shares
-## the same room footprint. Glows in the *destination* layer's color.
+## Floating object inside a room (not a wall opening). Touching it moves
+## the player to world `target_w`; x/z stay put since every world shares
+## the same room footprint. Glows in the *destination* world's color.
+## `direction`: +1 leads deeper, -1 shallower.
 
 @export var direction := 1
 @export var target_w := 1
@@ -19,18 +20,18 @@ var _t := 0.0
 
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
-	var style: Dictionary = DimensionState.LAYERS[target_w]
-	var c: Color = style.trim
+	var def := Worlds.def(target_w)
+	var c := def.trim_color
 	shell.set_instance_shader_parameter("tint", c)
 	ring.set_instance_shader_parameter("tint", c)
 	light.light_color = c
 	motes.color = c
 	label.modulate = c
 	label.font = Fonts.mono
-	label.text = "%s W%+d\n%s" % ["▲" if direction > 0 else "▼", target_w, style.name]
+	label.text = "%s %s\nESTRATO %d" % ["▼" if direction > 0 else "▲", def.display_name, def.stratum + 1]
 	_t = randf() * 10.0
-	# Findable by ear, and which way it leads: up-portals hum higher.
-	hum.pitch_scale = 1.12 if direction > 0 else 0.89
+	# Findable by ear, and which way it leads: shallower hums higher.
+	hum.pitch_scale = 0.89 if direction > 0 else 1.12
 
 func _process(delta: float) -> void:
 	_t += delta

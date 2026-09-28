@@ -56,7 +56,7 @@ func _draw_compact() -> void:
 	var w := DimensionState.player_w
 	var p := Vector2(24, size.y - 44)
 	var blink := 1.0 if fmod(_t, 0.5) < 0.25 else 0.25
-	_text(p, "W%+d // %s" % [w, DimensionState.LAYERS[w].name], FG, 13)
+	_text(p, "E%d // %s" % [Worlds.stratum(w) + 1, Worlds.def(w).display_name], FG, 13)
 	_text(p + Vector2(0, 18), "[TAB] ESCÁNER DE FASE", DIM, 11)
 	if _entity_hunting_here():
 		_text(p + Vector2(0, -20), "■ ENTIDAD EN TU FASE", Color(RED, blink), 11)
@@ -146,12 +146,12 @@ func _draw_header() -> void:
 func _draw_side() -> void:
 	var w := DimensionState.player_w
 	# Macro numeral: the only big type on the device.
-	draw_string(Fonts.heavy, Vector2(14, HEADER_H + 84), "W%+d" % w, HORIZONTAL_ALIGNMENT_LEFT, -1, 72, FG)
-	_text(Vector2(16, HEADER_H + 110), DimensionState.LAYERS[w].name, FG, 14)
+	draw_string(Fonts.heavy, Vector2(14, HEADER_H + 84), "E%d" % (Worlds.stratum(w) + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 72, FG)
+	_text(Vector2(16, HEADER_H + 110), Worlds.def(w).display_name, FG, 14)
 	var cell := _player_cell()
 	var rows := [
 		"CELDA   X%+d Z%+d" % [cell.x, cell.y],
-		"CAPAS   %d / %d" % [w - DimensionState.W_MIN + 1, DimensionState.W_SPAN + 1],
+		"MUNDOS  %d / %d" % [Worlds.ids().find(w) + 1, Worlds.ids().size()],
 		"SEÑAL   %s" % _noise_string(6),
 	]
 	for i in rows.size():
@@ -160,10 +160,10 @@ func _draw_side() -> void:
 	var to := RoomGenerator.anchor_cell - cell
 	var aw := RoomGenerator.anchor_w
 	_text(Vector2(16, HEADER_H + 188), "ANCLA   ΔX%+d ΔZ%+d" % [to.x, to.y], GREEN, 11)
-	var where := "EN TU FASE" if aw == w else "EN W%+d // %s" % [aw, DimensionState.LAYERS[aw].name]
+	var where := "EN TU FASE" if aw == w else "EN %s // E%d" % [Worlds.def(aw).display_name, Worlds.stratum(aw) + 1]
 	_text(Vector2(16, HEADER_H + 204), where, GREEN if aw == w else FG, 10)
 	# Threat meter: this world's intrinsic hostility, 5 blocks = x2.0.
-	var threat: float = DimensionState.LAYERS[w].threat
+	var threat := Worlds.def(w).threat
 	var blocks := clampi(roundi(threat * 2.5), 1, 5)
 	_text(Vector2(16, HEADER_H + 230), "AMENAZA x%.1f" % threat, RED if threat > 1.0 else FG, 11)
 	for i in 5:
@@ -190,12 +190,12 @@ func _draw_panels() -> void:
 	var top := area.position.y + (area.size.y - panel) / 2.0 + 8.0
 
 	for i in 3:
-		var dw := i - 1
-		var w := pw + dw
+		# Shallower neighbour, here, deeper neighbour.
+		var w := pw if i == 1 else Worlds.neighbor(pw, i - 1)
 		var p0 := Vector2(area.position.x + gap + i * (panel + gap), top)
-		var here := dw == 0
-		var in_range := w >= DimensionState.W_MIN and w <= DimensionState.W_MAX
-		var head := "[ W%+d / %s ]" % [w, DimensionState.LAYERS[w].name if in_range else "----"]
+		var here := i == 1
+		var in_range := w >= 0
+		var head := "[ %s ]" % (Worlds.def(w).display_name if in_range else "----")
 		_text(p0 + Vector2(0, -12), head, FG if here else DIM, 10)
 		if not in_range:
 			_draw_no_signal(Rect2(p0, Vector2.ONE * panel))
@@ -282,9 +282,9 @@ func _draw_footer() -> void:
 	var monster := _monster()
 	var pw := DimensionState.player_w
 	if monster:
-		var dw := monster.entity_w - pw
+		var hops := Worlds.distance(monster.entity_w, pw)
 		var status := "ACTIVA" if monster.is_hunting() else "LATENTE"
-		var line := "ENTIDAD   Δw %+d   COHERENCIA %.2f   ESTADO %s" % [dw, monster.coherence(), status]
+		var line := "ENTIDAD   A %d SALTOS   COHERENCIA %.2f   ESTADO %s" % [hops, monster.coherence(), status]
 		_text(Vector2(14, y), line, RED if _entity_hunting_here() else FG, 11)
 
 	# Crossing verdict for the portals in *this* room.
@@ -296,7 +296,7 @@ func _draw_footer() -> void:
 		_text(Vector2(x, y + 26), tag, FG, 11)
 		if not has:
 			_text(Vector2(x + 70, y + 26), "[ SIN PORTAL ]", DIM, 11)
-		elif monster and monster.entity_w == pw + dir:
+		elif monster and monster.entity_w == Worlds.neighbor(pw, dir):
 			_text(Vector2(x + 70, y + 26), "[ RIESGO ]", RED, 11)
 		else:
 			_text(Vector2(x + 70, y + 26), "[ SEGURO ]", GREEN, 11)

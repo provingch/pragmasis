@@ -90,9 +90,10 @@ func _physics_process(delta: float) -> void:
 
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
+	var world := Worlds.def(DimensionState.player_w)
 	var sprinting := Input.is_action_pressed("run") and direction != Vector3.ZERO and exhausted <= 0.0 and stamina > 0.0
-	_tick_stamina(delta, sprinting)
-	var speed := RUN_SPEED if sprinting else (EXHAUSTED_SPEED if exhausted > 0.0 else WALK_SPEED)
+	_tick_stamina(delta * world.stamina_drain if sprinting else delta, sprinting)
+	var speed := (RUN_SPEED if sprinting else (EXHAUSTED_SPEED if exhausted > 0.0 else WALK_SPEED)) * world.player_speed
 
 	if direction:
 		velocity.x = direction.x * speed
@@ -116,7 +117,9 @@ func _physics_process(delta: float) -> void:
 		var before := _bob_t
 		_bob_t += delta * hspeed * BOB_FREQ
 		if floori((_bob_t - STEP_PHASE) / TAU) != floori((before - STEP_PHASE) / TAU):
-			(steps_run if running else steps_walk).play()
+			var steps := steps_run if running else steps_walk
+			steps.volume_db = (-3.0 if running else -6.0) + linear_to_db(world.noise)
+			steps.play()
 	camera.fov = lerpf(camera.fov, RUN_FOV if running else WALK_FOV, delta * 6.0)
 
 func _tick_stamina(delta: float, sprinting: bool) -> void:

@@ -1,10 +1,10 @@
 extends Node
 
 ## Autoload. Streams an unbounded room lattice keyed by Vector4i(x, y, z, w)
-## around the player's cell. y is fixed at 0 (no floors yet); w spans
-## DimensionState.W_MIN..W_MAX. Each (x, z) is always generated for every w
+## around the player's cell. y is fixed at 0 (no floors yet); w is a
+## world id (see Worlds). Each (x, z) is always generated for every world
 ## at once, so a portal anywhere has a ready destination. Only the active
-## layer is attached to the tree (renders/collides); detached rooms keep
+## world is attached to the tree (renders/collides); detached rooms keep
 ## their exits/portal flags readable for the scanner.
 ##
 ## Everything about a cell (doors, portals, hideouts) comes from a hash of
@@ -141,7 +141,7 @@ func _stream() -> void:
 			var z := _center.y + dz
 			if rooms.has(Vector4i(x, 0, z, active_w)):
 				continue
-			for w in range(DimensionState.W_MIN, DimensionState.W_MAX + 1):
+			for w in Worlds.ids():
 				_create(x, z, w)
 
 	var far: Array[Vector4i] = []
@@ -209,14 +209,11 @@ func exits_for(x: int, z: int) -> Array[bool]:
 ## +1 / -1 for a portal in that w direction, 0 for none.
 func portal_dir(x: int, z: int, w: int) -> int:
 	if w != anchor_w and is_beacon(x, z):
-		return signi(anchor_w - w)
+		return 1 if Worlds.step_toward(w, anchor_w) > w else -1
 	if _rand(x, z, w, Salt.PORTAL) >= PORTAL_CHANCE:
 		return 0
-	if w == DimensionState.W_MAX:
-		return -1
-	if w == DimensionState.W_MIN:
-		return 1
-	return 1 if _rand(x, z, w, Salt.PORTAL_DIR) < 0.5 else -1
+	var dir := 1 if _rand(x, z, w, Salt.PORTAL_DIR) < 0.5 else -1
+	return dir if Worlds.neighbor(w, dir) >= 0 else -dir
 
 ## One cell per BEACON_BLOCK-square block, picked by hash.
 func is_beacon(x: int, z: int) -> bool:
@@ -240,7 +237,8 @@ func place_anchor(from: Vector2i) -> void:
 		if path_length(from, target) >= 0:
 			anchor_cell = target
 			break
-	anchor_w = DimensionState.W_MIN + int(_rand(anchor_cell.x, anchor_cell.y, 0, Salt.ANCHOR) * (DimensionState.W_SPAN + 1))
+	var ids := Worlds.ids()
+	anchor_w = ids[int(_rand(anchor_cell.x, anchor_cell.y, 0, Salt.ANCHOR) * ids.size())]
 
 ## Rooms walked from a to b through doors (every layer shares the maze), or
 ## -1 if it takes more than ANCHOR_MAX_PATH or leaves the search box.

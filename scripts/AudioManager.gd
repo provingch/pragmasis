@@ -1,11 +1,11 @@
 extends Node
 
-## Autoload. One ambient track per w-layer plus the chase track. All four
-## loop from launch and are mixed only by volume, so every switch is a
-## cross-fade and each track keeps its place while silent.
+## Autoload. Music: one ambient MusicTrack per world (worlds may share
+## one) plus the chase track, all looping and mixed only by volume, so every
+## switch is a cross-fade. Loop points live in each track's .tres.
 ##
 ## Exactly one track dominates: the chase while the entity hunts, otherwise
-## the ambient of the layer the player is in. A layer change mid-chase only
+## the ambient of the world the player is in. A world change mid-chase only
 ## retargets which ambient comes back when the chase ends.
 ##
 ## Also plays the non-positional one-shot SFX (play_sfx). Those keep playing
@@ -13,17 +13,7 @@ extends Node
 
 const FADE_TIME := 1.5
 const SILENT_DB := -80.0
-## Seconds each track jumps back to when it reaches its end. The only place
-## these live: tools/loop_music.py finds them (and bakes the crossfade that
-## makes the jump seamless) and prints them; paste the output here.
-const LOOP_OFFSETS := {
-	"carne": 5.693990,
-	"estatica": 3.387344,
-	"sedimento": 3.727927,
-	"umbral": 8.605240,
-	"eter": 8.374719,
-	"persecucion": 12.019010,
-}
+const CHASE_TRACK := "res://audio/music/persecucion.tres"
 const SFX := {
 	&"monster": preload("res://audio/sfx/monster_stinger.wav"),
 	&"game_over": preload("res://audio/sfx/game_over.wav"),
@@ -41,27 +31,20 @@ const SFX := {
 	&"collapse": preload("res://audio/sfx/collapse.wav"),
 }
 
-@onready var chase_player: AudioStreamPlayer = $ChasePlayer
-@onready var ambient_players: Dictionary[int, AudioStreamPlayer] = {
-	-2: $AmbientCarne,
-	-1: $AmbientSedimento,
-	0: $AmbientUmbral,
-	1: $AmbientEter,
-	2: $AmbientEstatica,
-}
+var chase_player: AudioStreamPlayer
+## Track path -> its player.
+var _music: Dictionary[String, AudioStreamPlayer] = {}
 
-## Layer whose ambient plays (or will, once the chase ends).
+## World whose ambient plays (or will, once the chase ends).
 var _active_w := 0
 var _chasing := false
 var _fade: Tween
 var _sfx: Dictionary[StringName, AudioStreamPlayer] = {}
 
 func _ready() -> void:
-	for p in _players():
-		var ogg := p.stream as AudioStreamOggVorbis
-		ogg.loop = true
-		ogg.loop_offset = LOOP_OFFSETS[ogg.resource_path.get_file().get_basename()]
-		p.play()
+	chase_player = _track_player(CHASE_TRACK)
+	for w in Worlds.ids():
+		_track_player(Worlds.def(w).music)
 	for key: StringName in SFX:
 		var p := AudioStreamPlayer.new()
 		p.stream = SFX[key]
@@ -73,6 +56,22 @@ func _ready() -> void:
 	_active_w = DimensionState.player_w
 	_mix(0.0)
 	DimensionState.layer_changed.connect(_on_layer_changed)
+
+## The (shared) player for a MusicTrack, created and started on first use.
+func _track_player(path: String) -> AudioStreamPlayer:
+	if not _music.has(path):
+		var track := load(path) as MusicTrack
+		var ogg := track.stream as AudioStreamOggVorbis
+		ogg.loop = true
+		ogg.loop_offset = track.loop_offset
+		var p := AudioStreamPlayer.new()
+		p.stream = ogg
+		p.bus = &"Music"
+		p.volume_db = SILENT_DB
+		add_child(p)
+		p.play()
+		_music[path] = p
+	return _music[path]
 
 func play_sfx(key: StringName) -> void:
 	_sfx[key].play()
@@ -93,7 +92,7 @@ func reset() -> void:
 	_mix(0.0)
 
 func _on_layer_changed(new_w: int) -> void:
-	play_sfx(&"whoosh_up" if new_w > _active_w else &"whoosh_down")
+	play_sfx(&"whoosh_down" if new_w > _active_w else &"whoosh_up")
 	_active_w = new_w
 	_mix(FADE_TIME)
 
@@ -101,7 +100,7 @@ func _on_layer_changed(new_w: int) -> void:
 ## down. Starts from each player's current volume and replaces any fade in
 ## flight, so a switch mid-fade just turns around.
 func _mix(time: float) -> void:
-	var loud := chase_player if _chasing else ambient_players[_active_w]
+	var loud := chase_player if _chasing else _music[Worlds.def(_active_w).music]
 	if _fade:
 		_fade.kill()
 	if time <= 0.0:
@@ -113,6 +112,4 @@ func _mix(time: float) -> void:
 		_fade.tween_property(p, "volume_db", 0.0 if p == loud else SILENT_DB, time)
 
 func _players() -> Array[AudioStreamPlayer]:
-	var all: Array[AudioStreamPlayer] = [chase_player]
-	all.append_array(ambient_players.values())
-	return all
+	return _music.values()

@@ -18,9 +18,10 @@ continuation of S, so the jump back to S is sample-contiguous whatever the
 match quality. Encoded to Ogg Vorbis (MP3 frames pad the end and can't cut
 at an exact sample).
 
-Prints each S: copy them into AudioManager.LOOP_OFFSETS, the one place the
-game reads them from.
+Writes each S into audio/music/<track>.tres (a MusicTrack: the one place
+the game reads loop points from), creating the .tres if it's new.
 """
+import re
 import subprocess
 from pathlib import Path
 
@@ -112,7 +113,28 @@ def process(name: str) -> tuple[float, float, float]:
     # Godot truncates loop_offset * rate to a sample: aim at the sample's middle.
     print(f"{name:12s} loop_offset={(s + 0.5) / SR:.6f} s  fin={e / SR:8.3f} s  bucle={(e - s) / SR:7.2f} s  "
           f"similitud={sim[ei, si]:.3f}  corr_xfade={corr:+.2f}  salto_union={jump:.4f} (p99.9 propio {typical:.4f})")
+    write_track(name, (s + 0.5) / SR)
     return (s + 0.5) / SR, e / SR, float(sim[ei, si])
+
+
+def write_track(name: str, offset: float) -> None:
+    """Sets loop_offset in the MusicTrack .tres (keeping the rest of it)."""
+    path = ROOT / "audio/music" / f"{name}.tres"
+    line = f"loop_offset = {offset:.6f}"
+    if path.exists():
+        text = path.read_text()
+        if "loop_offset = " in text:
+            text = re.sub(r"loop_offset = [\d.]+", line, text)
+        else:
+            text = text.rstrip("\n") + "\n" + line + "\n"
+    else:
+        text = (
+            '[gd_resource type="Resource" script_class="MusicTrack" load_steps=3 format=3]\n\n'
+            '[ext_resource type="Script" path="res://scripts/audio/MusicTrack.gd" id="1"]\n'
+            f'[ext_resource type="AudioStream" path="res://audio/music/{name}.ogg" id="2"]\n\n'
+            '[resource]\nscript = ExtResource("1")\nstream = ExtResource("2")\n' + line + "\n"
+        )
+    path.write_text(text)
 
 
 if __name__ == "__main__":

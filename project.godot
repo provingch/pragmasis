@@ -17,6 +17,7 @@ config/features=PackedStringArray("4.5", "Forward Plus")
 
 [autoload]
 
+Worlds="*res://scripts/worlds/Worlds.gd"
 GameManager="*res://scripts/GameManager.gd"
 AudioManager="*res://scenes/AudioManager.tscn"
 RoomGenerator="*res://scripts/rooms/RoomGenerator.gd"

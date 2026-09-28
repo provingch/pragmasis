@@ -1,6 +1,6 @@
 extends WorldEnvironment
 
-## Fog, ambient and glow in the active layer's palette; blends on shift.
+## Fog, ambient and glow in the active world's palette; blends on shift.
 
 const BLEND_TIME := 0.9
 
@@ -35,16 +35,16 @@ func _apply_settings() -> void:
 	environment.fog_depth_end = RoomGenerator.fog_end()
 
 func _apply(w: int, time: float) -> void:
-	var s: Dictionary = DimensionState.LAYERS[w]
+	var s := Worlds.def(w)
 	var env := environment
 	if time <= 0.0:
-		env.fog_light_color = s.fog
+		env.fog_light_color = s.fog_color
 		env.fog_depth_begin = s.fog_begin
-		env.background_color = s.fog
-		env.ambient_light_color = s.light
+		env.background_color = s.fog_color
+		env.ambient_light_color = s.light_color
 		return
 	var tw := create_tween().set_parallel()
-	tw.tween_property(env, "fog_light_color", s.fog, time)
+	tw.tween_property(env, "fog_light_color", s.fog_color, time)
 	tw.tween_property(env, "fog_depth_begin", s.fog_begin, time)
-	tw.tween_property(env, "background_color", s.fog, time)
-	tw.tween_property(env, "ambient_light_color", s.light, time)
+	tw.tween_property(env, "background_color", s.fog_color, time)
+	tw.tween_property(env, "ambient_light_color", s.light_color, time)

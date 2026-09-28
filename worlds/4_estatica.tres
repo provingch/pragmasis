@@ -1,0 +1,95 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=24 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_3gy8g"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_k00bn"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="3_hjg8n"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorSlab.gd" id="4_vohts"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorLines.gd" id="5_3ibbv"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloatingBlocks.gd" id="6_77gjg"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="7_0n42v"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="8_7vao6"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="9_72k3m"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="10_8gguo"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallJambEdges.gd" id="11_qlxnx"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallPanels.gd" id="12_uui0f"]
+
+[sub_resource type="Resource" id="Resource_30ko4"]
+script = ExtResource("1_3gy8g")
+
+[sub_resource type="Resource" id="Resource_jfciw"]
+script = ExtResource("3_hjg8n")
+size = Vector3(3, 0.03, 0.03)
+offset = -0.05
+
+[sub_resource type="Resource" id="Resource_jipag"]
+script = ExtResource("4_vohts")
+
+[sub_resource type="Resource" id="Resource_yrkxp"]
+script = ExtResource("5_3ibbv")
+along_x = PackedFloat32Array(0)
+along_z = PackedFloat32Array(0)
+width = 0.04
+height = 0.01
+kind = "edge"
+
+[sub_resource type="Resource" id="Resource_2t70h"]
+script = ExtResource("6_77gjg")
+
+[sub_resource type="Resource" id="Resource_gtosa"]
+script = ExtResource("7_0n42v")
+body_kind = "void"
+front_kind = "void"
+dressing = 5
+
+[sub_resource type="Resource" id="Resource_6yac6"]
+script = ExtResource("9_72k3m")
+
+[sub_resource type="Resource" id="Resource_1qktq"]
+script = ExtResource("10_8gguo")
+y = 0.025
+height = 0.05
+depth = 0.05
+kind = "edge"
+
+[sub_resource type="Resource" id="Resource_e0ii5"]
+script = ExtResource("10_8gguo")
+y = 0.025
+height = 0.05
+depth = 0.05
+kind = "edge"
+from_ceiling = true
+
+[sub_resource type="Resource" id="Resource_5ghg1"]
+script = ExtResource("11_qlxnx")
+
+[sub_resource type="Resource" id="Resource_ftmbo"]
+script = ExtResource("12_uui0f")
+
+[resource]
+script = ExtResource("8_7vao6")
+id = &"estatica"
+display_name = "ESTÁTICA"
+stratum = 4
+wall_color = Color(0.05490196, 0.0627451, 0.07450981, 1)
+floor_color = Color(0.03137255, 0.03529412, 0.043137256, 1)
+accent_color = Color(0.07058824, 0.08627451, 0.105882354, 1)
+trim_color = Color(0.84705883, 0.9843137, 1, 1)
+light_color = Color(0.8117647, 0.9137255, 1, 1)
+fog_color = Color(0.007843138, 0.011764706, 0.015686275, 1)
+light_energy = 1.4
+light_y = 8.5
+flicker = "glitch"
+fog_begin = 6.0
+roughness = 0.75
+grime_frequency = 0.5
+height = 10.0
+floor_kit = SubResource("Resource_jipag")
+wall_kit = SubResource("Resource_6yac6")
+wall_props = Array[ExtResource("2_k00bn")]([SubResource("Resource_1qktq"), SubResource("Resource_e0ii5"), SubResource("Resource_5ghg1"), SubResource("Resource_ftmbo")])
+ceiling_kit = SubResource("Resource_30ko4")
+ceiling_props = Array[ExtResource("2_k00bn")]([SubResource("Resource_jfciw")])
+floor_props = Array[ExtResource("2_k00bn")]([SubResource("Resource_yrkxp"), SubResource("Resource_2t70h")])
+hideout = SubResource("Resource_gtosa")
+music = "res://audio/music/estatica.tres"
+threat = 0.6
+entity_speed = 1.25

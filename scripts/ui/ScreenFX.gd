@@ -30,7 +30,7 @@ func _process(delta: float) -> void:
 	_set_active(_danger > ACTIVE_EPS or _shift > ACTIVE_EPS)
 
 func _on_layer_changed(new_w: int) -> void:
-	mat.set_shader_parameter("tint", DimensionState.LAYERS[new_w].trim)
+	mat.set_shader_parameter("tint", Worlds.def(new_w).trim_color)
 	# Active right away: the room swap happens this frame, behind the tear.
 	_set_shift(1.0)
 	_set_active(true)

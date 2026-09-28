@@ -16,8 +16,8 @@ func _ready() -> void:
 func _on_game_over() -> void:
 	AudioManager.play_sfx(&"game_over")
 	var w := DimensionState.player_w
-	detail.text = "%s EN W%+d // %s\nSECUENCIAS COMPLETADAS %02d  //  RÉCORD %02d" % [
-		GameManager.cause, w, DimensionState.LAYERS[w].name, GameManager.score(), GameManager.best]
+	detail.text = "%s EN %s\nSECUENCIAS COMPLETADAS %02d  //  RÉCORD %02d" % [
+		GameManager.cause, Worlds.def(w).display_name, GameManager.score(), GameManager.best]
 	visible = true
 	# Slam in: overshoot then settle, like a signal locking on.
 	root.modulate.a = 0.0

@@ -68,16 +68,16 @@ func _ready() -> void:
 func is_hunting() -> bool:
 	return state == State.CHASE
 
-## 1.0 on the player's layer, halving per layer away: a neighbour stays a
-## real threat (0.5, as it was with 3 layers) without matching your own,
-## and far layers fade out instead of hitting a hard zero.
+## 1.0 in the player's world, halving per portal hop away: a neighbour
+## stays a real threat (0.5) without matching your own, and far worlds
+## fade out instead of hitting a hard zero.
 func coherence() -> float:
-	return pow(0.5, absi(entity_w - DimensionState.player_w))
+	return pow(0.5, Worlds.distance(entity_w, DimensionState.player_w))
 
 ## Delay under current conditions: nearer in w and a more hostile world
 ## (the one the player is in right now) both shorten it.
 func spawn_delay() -> float:
-	var threat: float = DimensionState.LAYERS[DimensionState.player_w].threat
+	var threat := Worlds.def(DimensionState.player_w).threat
 	return lerpf(MAX_SPAWN_DELAY, MIN_SPAWN_DELAY, coherence()) / threat / GameManager.threat_scale()
 
 ## The player slipped into a hideout: true if it saw them do it.
@@ -86,7 +86,7 @@ func saw_hiding() -> bool:
 		return false
 	var eye := global_position + Vector3(0, 0.9, 0)
 	var target := _player.global_position + Vector3(0, 0.6, 0)
-	if eye.distance_to(target) > SEE_DISTANCE:
+	if eye.distance_to(target) > SEE_DISTANCE * Worlds.def(entity_w).visibility:
 		return false
 	var ray := PhysicsRayQueryParameters3D.create(eye, target, 1) # world geometry only
 	return get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
@@ -101,7 +101,7 @@ func _begin_idle() -> void:
 	state = State.IDLE
 	set_physics_process(false)
 	catch_area.monitoring = false
-	entity_w = randi_range(DimensionState.W_MIN, DimensionState.W_MAX)
+	entity_w = Worlds.ids().pick_random()
 	_spawn_progress = 0.0
 	_omened = false
 
@@ -164,7 +164,7 @@ func _process(delta: float) -> void:
 	var c := coherence()
 	# Spins faster when it's closing in on your layer.
 	_phase_angle += delta * PHASE_SPIN_SPEED * lerpf(0.6, 1.4, c)
-	var col: Color = (DimensionState.LAYERS[entity_w].trim as Color).lerp(HUNT_COLOR, c)
+	var col := Worlds.def(entity_w).trim_color.lerp(HUNT_COLOR, c)
 	tesseract.phase = _phase_angle
 	tesseract.coherence = c
 	tesseract.color = col
@@ -175,7 +175,7 @@ func _process(delta: float) -> void:
 func _physics_process(_delta: float) -> void:
 	if state != State.CHASE:
 		return
-	var world_speed: float = DimensionState.LAYERS[DimensionState.player_w].entity_speed
+	var world_speed := Worlds.def(DimensionState.player_w).entity_speed
 	var speed := CHASE_SPEED * world_speed * GameManager.speed_scale() * lerpf(0.4, 1.0, coherence())
 	if GameManager.is_collapsed:
 		speed *= COLLAPSE_SPEED
