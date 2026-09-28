@@ -11,15 +11,19 @@ extends Node
 ## the world seed and its coordinates, so a freed cell regenerates
 ## identically and both sides of a shared wall always agree.
 ##
-## Each sequence has an anchor (the exit) 8-12 rooms away, on any layer,
-## with a maze path to it checked when it's placed. Beacon portals, one per
-## BEACON_BLOCK x BEACON_BLOCK block on every other layer, always point
-## toward the anchor's layer, so the way there is never more than a few
-## rooms off. A completed sequence reseeds the whole world.
+## Each sequence has an anchor (the exit) 8-12 rooms away, one stratum
+## deeper than the last (see GameManager.anchor_stratum), with a maze path
+## to it checked when it's placed. Beacons, one per BEACON_BLOCK x
+## BEACON_BLOCK block in every other world, always lead one hop closer to
+## the anchor's world (a portal or a fissure), so the way there is never
+## more than a few rooms off. A completed sequence reseeds the whole world.
 
 const ROOM_SCENE := preload("res://scenes/rooms/Room.tscn")
-## Per room, any direction: mean 12 rooms walked before meeting a portal.
+## Per room: a common portal (within the stratum, where it has a
+## neighbouring slot) or, rarer, a fissure to the next stratum.
 const PORTAL_CHANCE := 1.0 / 12.0
+const FISSURE_CHANCE := 1.0 / 20.0
+const NO_LINK := Vector2i(-1, 0)
 ## Doors beyond the one every cell is guaranteed (see edge_open).
 const EXTRA_DOOR_CHANCE := 0.3
 const HIDEOUT_CHANCE := 1.0 / 6.0
@@ -82,7 +86,7 @@ func regenerate() -> void:
 func _reseed() -> void:
 	world_seed = randi()
 	_center = cell_of(_player.global_position)
-	place_anchor(_center)
+	place_anchor(_center, GameManager.anchor_stratum())
 	_stream()
 
 func _process(_delta: float) -> void:
@@ -169,9 +173,9 @@ func _create(x: int, z: int, w: int) -> void:
 	room.variant = int(_rand(x, z, w, Salt.STYLE) * Room.VARIANTS)
 	room.has_anchor = w == anchor_w and Vector2i(x, z) == anchor_cell
 	room.hideout = has_hideout(x, z, w)
-	var dir := portal_dir(x, z, w)
-	room.phase_positive = dir == 1
-	room.phase_negative = dir == -1
+	var link := link_of(x, z, w)
+	room.link_target = link.x
+	room.link_fissure = link.y == 1
 	room.position = Vector3(x * Room.ROOM_SIZE, 0, z * Room.ROOM_SIZE)
 	rooms[Vector4i(x, 0, z, w)] = room
 	if w == active_w:
@@ -206,14 +210,25 @@ func edge_open(x: int, z: int, east: bool) -> bool:
 func exits_for(x: int, z: int) -> Array[bool]:
 	return [edge_open(x, z - 1, false), edge_open(x, z, false), edge_open(x, z, true), edge_open(x - 1, z, true)]
 
-## +1 / -1 for a portal in that w direction, 0 for none.
-func portal_dir(x: int, z: int, w: int) -> int:
+## Where cell (x, z)'s portal leads in world w: Vector2i(target world,
+## 1 if it's a fissure), NO_LINK for none.
+func link_of(x: int, z: int, w: int) -> Vector2i:
 	if w != anchor_w and is_beacon(x, z):
-		return 1 if Worlds.step_toward(w, anchor_w) > w else -1
-	if _rand(x, z, w, Salt.PORTAL) >= PORTAL_CHANCE:
-		return 0
+		var t := Worlds.step_toward(w, anchor_w)
+		return Vector2i(t, int(Worlds.stratum(t) != Worlds.stratum(w)))
+	var r := _rand(x, z, w, Salt.PORTAL)
 	var dir := 1 if _rand(x, z, w, Salt.PORTAL_DIR) < 0.5 else -1
-	return dir if Worlds.neighbor(w, dir) >= 0 else -dir
+	var t := -1
+	if r < FISSURE_CHANCE:
+		t = Worlds.fissure_target(w, dir)
+		if t < 0:
+			t = Worlds.fissure_target(w, -dir)
+		return Vector2i(t, 1) if t >= 0 else NO_LINK
+	if r < FISSURE_CHANCE + PORTAL_CHANCE:
+		t = Worlds.portal_target(w, dir)
+		if t < 0:
+			t = Worlds.portal_target(w, -dir)
+	return Vector2i(t, 0) if t >= 0 else NO_LINK
 
 ## One cell per BEACON_BLOCK-square block, picked by hash.
 func is_beacon(x: int, z: int) -> bool:
@@ -227,9 +242,9 @@ func has_hideout(x: int, z: int, w: int) -> bool:
 		return false
 	return _rand(x, z, w, Salt.HIDEOUT) < HIDEOUT_CHANCE
 
-## Anchor 8-12 rooms from `from`, on a random layer, with a maze path to it
-## (candidates are tried in hash order until one has).
-func place_anchor(from: Vector2i) -> void:
+## Anchor 8-12 rooms from `from`, in a world of `stratum_index`, with a
+## maze path to it (candidates are tried in hash order until one has).
+func place_anchor(from: Vector2i, stratum_index: int) -> void:
 	for k in 64:
 		var a := _rand(from.x, from.y, k, Salt.ANCHOR) * TAU
 		var d := lerpf(ANCHOR_MIN, ANCHOR_MAX, _rand(from.x, from.y, k + 1000, Salt.ANCHOR))
@@ -237,8 +252,8 @@ func place_anchor(from: Vector2i) -> void:
 		if path_length(from, target) >= 0:
 			anchor_cell = target
 			break
-	var ids := Worlds.ids()
-	anchor_w = ids[int(_rand(anchor_cell.x, anchor_cell.y, 0, Salt.ANCHOR) * ids.size())]
+	var choices := Worlds.in_stratum(stratum_index)
+	anchor_w = choices[int(_rand(anchor_cell.x, anchor_cell.y, 0, Salt.ANCHOR) * choices.size())]
 
 ## Rooms walked from a to b through doors (every layer shares the maze), or
 ## -1 if it takes more than ANCHOR_MAX_PATH or leaves the search box.

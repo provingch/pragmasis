@@ -1,8 +1,9 @@
 extends Node
 
 ## Autoload. The run: sequences (reach the anchor before the clock runs
-## out), collapse when it does, score = sequences completed, best score
-## persisted. Difficulty rises per sequence.
+## out), collapse when it does. Each anchor lies one stratum deeper than
+## the last; score = the deepest stratum reached through an anchor, best
+## score persisted. Difficulty rises per sequence.
 
 signal game_over
 ## World regenerates around the player on this (emitted from a process
@@ -23,8 +24,11 @@ var is_game_over := false
 var cause := ""
 ## 1-based: the sequence being played.
 var sequence := 1
+## Deepest stratum reached through an anchor (0 = still at the surface).
+var depth := 0
 var time_left := 0.0
 var is_collapsed := false
+## Best depth ever (persisted).
 var best := 0
 ## A run is in progress (Main is loaded).
 var running := false
@@ -35,7 +39,7 @@ var banner_t := 0.0
 func _ready() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(RECORD_PATH) == OK:
-		best = cfg.get_value("run", "best", 0)
+		best = cfg.get_value("run", "depth", 0)
 
 func _process(delta: float) -> void:
 	banner_t = maxf(banner_t - delta, 0.0)
@@ -51,12 +55,18 @@ func _process(delta: float) -> void:
 func start_run() -> void:
 	is_game_over = false
 	sequence = 1
+	depth = 0
 	time_left = time_limit()
 	is_collapsed = false
 	running = true
 
 func score() -> int:
-	return sequence - 1
+	return depth
+
+## Where this sequence's anchor goes: one stratum deeper than the last
+## (or the deepest there is).
+func anchor_stratum() -> int:
+	return mini(depth + 1, Worlds.deepest_stratum())
 
 # --- difficulty per sequence ----------------------------------------------------
 
@@ -76,16 +86,17 @@ func speed_scale() -> float:
 func complete_sequence() -> void:
 	if is_game_over or not running:
 		return
+	var done := sequence
 	sequence += 1
-	var done := score()
-	if done > best:
-		best = done
+	depth = maxi(depth, Worlds.stratum(RoomGenerator.anchor_w))
+	if depth > best:
+		best = depth
 		var cfg := ConfigFile.new()
-		cfg.set_value("run", "best", best)
+		cfg.set_value("run", "depth", best)
 		cfg.save(RECORD_PATH)
 	time_left = time_limit()
 	is_collapsed = false
-	_announce("SECUENCIA %02d COMPLETADA" % done)
+	_announce("ESTRATO %d ALCANZADO" % (depth + 1))
 	AudioManager.play_sfx(&"sequence_done")
 	get_tree().process_frame.connect(func() -> void: sequence_completed.emit(done), CONNECT_ONE_SHOT)
 

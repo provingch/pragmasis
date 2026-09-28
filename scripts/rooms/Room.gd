@@ -44,8 +44,10 @@ enum Exit { NORTH, SOUTH, EAST, WEST }
 
 ## Order: [north(-z), south(+z), east(+x), west(-x)]
 @export var exits: Array[bool] = [true, true, true, true]
-@export var phase_positive := false
-@export var phase_negative := false
+## The room's portal: world it leads to (-1: none) and whether it's a
+## fissure. Deeper targets stand in the +x +z corner, shallower in -x -z.
+@export var link_target := -1
+@export var link_fissure := false
 @export var w := 0
 var variant := 0
 var hideout := false
@@ -99,12 +101,13 @@ func _ready() -> void:
 	_build_light()
 	if has_anchor:
 		add_child(ANCHOR_SCENE.instantiate())
-	# Opposite corners so both portals can coexist in one room.
-	var corner := ROOM_SIZE / 2.0 - PORTAL_INSET
-	if phase_positive:
-		_build_phase_portal(1, Vector3(corner, PORTAL_HEIGHT, corner))
-	if phase_negative:
-		_build_phase_portal(-1, Vector3(-corner, PORTAL_HEIGHT, -corner))
+	if link_target >= 0:
+		var corner := (ROOM_SIZE / 2.0 - PORTAL_INSET) * (1.0 if link_target > w else -1.0)
+		var portal := PHASE_PORTAL_SCENE.instantiate() as PhasePortal
+		portal.target_w = link_target
+		portal.fissure = link_fissure
+		portal.position = Vector3(corner, PORTAL_HEIGHT, corner)
+		add_child(portal)
 
 func _process(delta: float) -> void:
 	_t += delta
@@ -166,13 +169,6 @@ func _instance(mesh: Mesh) -> MeshInstance3D:
 	mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	add_child(mi)
 	return mi
-
-func _build_phase_portal(direction: int, pos: Vector3) -> void:
-	var portal := PHASE_PORTAL_SCENE.instantiate() as PhasePortal
-	portal.direction = direction
-	portal.target_w = Worlds.neighbor(w, direction)
-	portal.position = pos
-	add_child(portal)
 
 func _build_light() -> void:
 	_light = OmniLight3D.new()

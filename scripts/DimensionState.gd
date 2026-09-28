@@ -21,12 +21,12 @@ func reset() -> void:
 	player_w = Worlds.start()
 	_last_shift_ms = -SHIFT_COOLDOWN_MS
 
-func request_phase_shift(direction: int) -> void:
+## Through a portal or fissure to world `new_w`.
+func request_shift(new_w: int) -> void:
 	var now := Time.get_ticks_msec()
 	if now - _last_shift_ms < SHIFT_COOLDOWN_MS:
 		return
-	var new_w := Worlds.neighbor(player_w, direction)
-	if new_w < 0:
+	if new_w < 0 or new_w == player_w:
 		return
 	_last_shift_ms = now
 	player_w = new_w

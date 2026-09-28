@@ -151,7 +151,7 @@ func _draw_side() -> void:
 	var cell := _player_cell()
 	var rows := [
 		"CELDA   X%+d Z%+d" % [cell.x, cell.y],
-		"MUNDOS  %d / %d" % [Worlds.ids().find(w) + 1, Worlds.ids().size()],
+		"ESTRATO %d / %d" % [Worlds.stratum(w) + 1, Worlds.deepest_stratum() + 1],
 		"SEÑAL   %s" % _noise_string(6),
 	]
 	for i in rows.size():
@@ -191,7 +191,7 @@ func _draw_panels() -> void:
 
 	for i in 3:
 		# Shallower neighbour, here, deeper neighbour.
-		var w := pw if i == 1 else Worlds.neighbor(pw, i - 1)
+		var w := pw if i == 1 else Worlds.adjacent(pw, i - 1)
 		var p0 := Vector2(area.position.x + gap + i * (panel + gap), top)
 		var here := i == 1
 		var in_range := w >= 0
@@ -212,23 +212,27 @@ func _draw_layer_contents(p0: Vector2, w: int, here: bool) -> void:
 	var col := FG if here else DIM
 	draw_rect(Rect2(p0, Vector2.ONE * CELL * n), FAINT, false, 1.0)
 
+	# From the world's data, not its rooms: any world, loaded or not.
 	for dx in range(-r, r + 1):
 		for dz in range(-r, r + 1):
-			var room: Room = RoomGenerator.rooms.get(Vector4i(cell.x + dx, 0, cell.y + dz, w))
-			if room == null:
-				continue
+			var x := cell.x + dx
+			var z := cell.y + dz
+			var exits := RoomGenerator.exits_for(x, z)
 			var c := center + Vector2(dx, dz) * CELL
 			var h := CELL / 2.0
-			_draw_wall(c + Vector2(-h, -h), c + Vector2(h, -h), room.exits[Room.Exit.NORTH], col)
-			_draw_wall(c + Vector2(-h, h), c + Vector2(h, h), room.exits[Room.Exit.SOUTH], col)
-			_draw_wall(c + Vector2(h, -h), c + Vector2(h, h), room.exits[Room.Exit.EAST], col)
-			_draw_wall(c + Vector2(-h, -h), c + Vector2(-h, h), room.exits[Room.Exit.WEST], col)
-			var glyphs := ("▲" if room.phase_positive else "") + ("▼" if room.phase_negative else "")
-			if glyphs != "":
-				_text(c + Vector2(-h + 4, -h + 12), glyphs, col, 9)
-			if room.hideout: # its corner: +x (right), -z (up)
+			_draw_wall(c + Vector2(-h, -h), c + Vector2(h, -h), exits[Room.Exit.NORTH], col)
+			_draw_wall(c + Vector2(-h, h), c + Vector2(h, h), exits[Room.Exit.SOUTH], col)
+			_draw_wall(c + Vector2(h, -h), c + Vector2(h, h), exits[Room.Exit.EAST], col)
+			_draw_wall(c + Vector2(-h, -h), c + Vector2(-h, h), exits[Room.Exit.WEST], col)
+			var link := RoomGenerator.link_of(x, z, w)
+			if link.y == 1: # fissure: a crack
+				var k := c + Vector2(-h + 7, -h + 4)
+				draw_polyline(PackedVector2Array([k, k + Vector2(3, 3), k + Vector2(-1, 6), k + Vector2(2, 10)]), col, 1.5)
+			elif link.x >= 0:
+				_text(c + Vector2(-h + 4, -h + 12), "▼" if link.x > w else "▲", col, 9)
+			if RoomGenerator.has_hideout(x, z, w): # its corner: +x (right), -z (up)
 				draw_rect(Rect2(c + Vector2(h - 9, -h + 3), Vector2(6, 6)), col, false, 1.0)
-			if room.has_anchor:
+			if w == RoomGenerator.anchor_w and Vector2i(x, z) == RoomGenerator.anchor_cell:
 				draw_rect(Rect2(c - Vector2(4, 4), Vector2(8, 8)), GREEN)
 	for a in range(1, n):
 		for b in range(1, n):
@@ -287,20 +291,16 @@ func _draw_footer() -> void:
 		var line := "ENTIDAD   A %d SALTOS   COHERENCIA %.2f   ESTADO %s" % [hops, monster.coherence(), status]
 		_text(Vector2(14, y), line, RED if _entity_hunting_here() else FG, 11)
 
-	# Crossing verdict for the portals in *this* room.
-	var room: Room = RoomGenerator.rooms.get(_room_coord())
-	var x := 14.0
-	for dir: int in [1, -1]:
-		var has := room != null and (room.phase_positive if dir > 0 else room.phase_negative)
-		var tag := "CRUCE %sW" % ("+" if dir > 0 else "−")
-		_text(Vector2(x, y + 26), tag, FG, 11)
-		if not has:
-			_text(Vector2(x + 70, y + 26), "[ SIN PORTAL ]", DIM, 11)
-		elif monster and monster.entity_w == Worlds.neighbor(pw, dir):
-			_text(Vector2(x + 70, y + 26), "[ RIESGO ]", RED, 11)
-		else:
-			_text(Vector2(x + 70, y + 26), "[ SEGURO ]", GREEN, 11)
-		x += 250.0
+	# Crossing verdict for the portal in *this* room.
+	var c := _player_cell()
+	var link := RoomGenerator.link_of(c.x, c.y, pw)
+	if link.x < 0:
+		_text(Vector2(14, y + 26), "CRUCE   [ SIN PORTAL ]", DIM, 11)
+		return
+	var tag := "%s %s %s // E%d" % ["FISURA" if link.y == 1 else "CRUCE", "▼" if link.x > pw else "▲", Worlds.def(link.x).display_name, Worlds.stratum(link.x) + 1]
+	_text(Vector2(14, y + 26), tag, FG, 11)
+	var risky := monster and monster.entity_w == link.x
+	_text(Vector2(360, y + 26), "[ RIESGO ]" if risky else "[ SEGURO ]", RED if risky else GREEN, 11)
 
 func _draw_sweep() -> void:
 	var x0 := SIDE_W
@@ -357,9 +357,6 @@ func _draw_wall(a: Vector2, b: Vector2, open: bool, col: Color) -> void:
 	draw_line(a, a + stub, col, 2.0)
 	draw_line(b - stub, b, col, 2.0)
 
-func _room_coord() -> Vector4i:
-	var c := _player_cell()
-	return Vector4i(c.x, 0, c.y, DimensionState.player_w)
 
 func _to_panel(world_pos: Vector3) -> Vector2:
 	return Vector2(world_pos.x, world_pos.z) / Room.ROOM_SIZE * CELL
