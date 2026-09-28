@@ -94,6 +94,9 @@ func _physics_process(delta: float) -> void:
 	var sprinting := Input.is_action_pressed("run") and direction != Vector3.ZERO and exhausted <= 0.0 and stamina > 0.0
 	_tick_stamina(delta * world.stamina_drain if sprinting else delta, sprinting)
 	var speed := (RUN_SPEED if sprinting else (EXHAUSTED_SPEED if exhausted > 0.0 else WALK_SPEED)) * world.player_speed
+	var room := RoomGenerator.room_at(global_position, DimensionState.player_w)
+	if room:
+		speed *= room.speed_at(global_position - room.global_position)
 
 	if direction:
 		velocity.x = direction.x * speed

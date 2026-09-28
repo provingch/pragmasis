@@ -9,8 +9,10 @@ extends Node
 ## next frames within BUILD_BUDGET_MS.
 ##
 ## Worlds are warmed up before they're needed: the active one fully at
-## load, then the destinations of nearby portals and fissures, a material
-## or a room shape at a time (WARM_BUDGET_MS per frame).
+## load, then the destinations of nearby portals and fissures, nearest
+## first, a material or a room shape at a time (WARM_BUDGET_MS per frame).
+## A portal one room away, or the world just entered, jumps the queue: with
+## four worlds per stratum the queue runs long, and a cold crossing costs.
 ##
 ## Each sequence has an anchor (the exit) 8-12 rooms away, one stratum
 ## deeper than the last (see GameManager.anchor_stratum), with a maze path
@@ -65,7 +67,8 @@ var _parent: Node3D
 var _player: Node3D
 var _center := Vector2i.ZERO
 var _pending: Array[Vector2i] = [] # cells waiting to be built, nearest first
-var _warm_steps: Array[Callable] = []
+var _warm_steps := {} # world id -> Array[Callable] still to run
+var _warm_order: Array[int] = [] # worlds with steps left, next first
 var _warm_queued := {} # world id -> true
 
 func init_world(parent: Node3D, player: Node3D, start_w: int) -> void:
@@ -76,9 +79,10 @@ func init_world(parent: Node3D, player: Node3D, start_w: int) -> void:
 	# The world you start in, whole, now (level load); the rest trickles in.
 	Room._grime_texture(start_w, true)
 	_queue_warm(start_w)
-	for step in _warm_steps:
+	for step: Callable in _warm_steps[start_w]:
 		step.call()
-	_warm_steps.clear()
+	_warm_steps.erase(start_w)
+	_warm_order.erase(start_w)
 	_reseed()
 
 func _ready() -> void:
@@ -108,8 +112,11 @@ func _process(_delta: float) -> void:
 		_build(_pending.pop_front())
 	if not _pending.is_empty():
 		return # one budget per frame: warm-ups wait for the rooms
-	while not _warm_steps.is_empty():
-		_warm_steps.pop_front().call()
+	while not _warm_order.is_empty():
+		var steps: Array = _warm_steps[_warm_order[0]]
+		steps.pop_front().call()
+		if steps.is_empty():
+			_warm_steps.erase(_warm_order.pop_front())
 		if (Time.get_ticks_usec() - t0) / 1000.0 >= WARM_BUDGET_MS:
 			break
 
@@ -132,7 +139,7 @@ func switch_layer(new_w: int) -> void:
 		return
 	_clear_rooms()
 	active_w = new_w
-	_queue_warm(new_w)
+	_queue_warm(new_w, true)
 	_stream()
 
 ## Applied live: a running world grows/shrinks to the new radii right away.
@@ -177,11 +184,15 @@ func _stream() -> void:
 	while not _pending.is_empty() and _dist(_pending[0]) <= BUILD_NOW:
 		_build(_pending.pop_front())
 	# Warm up whatever the portals and fissures around here lead to.
+	var near: Array[Vector2i] = [] # (distance, world)
 	for dx in range(-gen_radius - 1, gen_radius + 2):
 		for dz in range(-gen_radius - 1, gen_radius + 2):
 			var t := link_of(_center.x + dx, _center.y + dz, active_w).x
 			if t >= 0:
-				_queue_warm(t)
+				near.append(Vector2i(maxi(absi(dx), absi(dz)), t))
+	near.sort()
+	for n in near:
+		_queue_warm(n.y, n.x <= 1)
 	_update_rooms()
 
 func _dist(c: Vector2i) -> int:
@@ -209,10 +220,14 @@ func _update_rooms() -> void:
 		rooms[c].set_shadow(_dist(c) <= shadow_radius)
 		rooms[c].set_fog_end(fog)
 
-func _queue_warm(w: int) -> void:
+func _queue_warm(w: int, urgent := false) -> void:
 	if not _warm_queued.has(w):
 		_warm_queued[w] = true
-		_warm_steps.append_array(Room.warm_steps(w))
+		_warm_steps[w] = Room.warm_steps(w)
+		_warm_order.append(w)
+	if urgent and _warm_order.has(w):
+		_warm_order.erase(w)
+		_warm_order.push_front(w)
 
 # --- deterministic layout -------------------------------------------------------
 

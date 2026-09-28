@@ -5,14 +5,23 @@ class_name RoomBuilder
 ## material kind), fixture boxes (the room's flickering light material) and
 ## collision boxes, then bakes them into meshes shared by every room with
 ## the same (world, exits, variant). Also the vocabulary kits place things
-## with: wall segments between doors, points and sizes along them, and the
-## corners nothing solid may occupy.
+## with: wall segments between doors, points and sizes along them, the
+## corners nothing solid may occupy (clear), and floor zones that change
+## the player's speed.
 
 const ROOM_SIZE := Room.ROOM_SIZE
 const WALL_THICKNESS := Room.WALL_THICKNESS
 const DOOR_WIDTH := Room.DOOR_WIDTH
 ## Inner face of the walls, from the room's centre.
 const INNER := ROOM_SIZE / 2.0 - WALL_THICKNESS / 2.0
+## Half the walkway plus (a door's width, a hair wider).
+const WALK_HALF := DOOR_WIDTH / 2.0 + 0.1
+## Around each portal corner: its sphere, the player, and the way in from
+## the walkway.
+const PORTAL_CLEAR := 2.0
+const PORTALS: Array[Vector2] = [Vector2(3.5, 3.5), Vector2(-3.5, -3.5)]
+## The hideout, its door and the way to it (x, z).
+const HIDEOUT_CLEAR := Rect2(1.5, -5.0, 3.5, 2.4)
 
 var world: WorldDef
 var w: int
@@ -27,6 +36,8 @@ var wall_heights: Array[float] = []
 var pieces := {} # kind -> [[size, pos], ...]
 var fixture: Array = []
 var colliders: Array = []
+## [Rect2 (x, z), speed multiplier] per floor zone.
+var zones: Array = []
 var _segments: Array[Dictionary] = []
 
 func _init(world_id: int, room_exits: Array[bool], v: int) -> void:
@@ -49,6 +60,10 @@ func box(size: Vector3, pos: Vector3, kind: String, collide := false) -> void:
 ## Light fixture box: drawn with the room's own flickering material.
 func fix(size: Vector3, pos: Vector3) -> void:
 	fixture.append([size, pos])
+
+## A floor zone: standing inside it multiplies the player's speed.
+func zone(rect: Rect2, speed: float) -> void:
+	zones.append([rect, speed])
 
 ## Random count from a kit's range, scaled by the world's prop density.
 func count(lo: int, hi: int) -> int:
@@ -105,8 +120,22 @@ func strip(seg: Dictionary, y: float, h: float, depth: float, kind: String) -> v
 func reserved(p: Vector3) -> bool:
 	return p.x > 3.0 and p.z < -3.0
 
+## True if a solid footprint (centre, size; y ignored) stays inside the
+## room and out of the walkway plus, the portal corners and the hideout
+## corner: somewhere it can never block a way through.
+func clear(center: Vector3, size: Vector3) -> bool:
+	var r := Rect2(center.x - size.x / 2.0, center.z - size.z / 2.0, size.x, size.z)
+	if r.position.x < -INNER or r.position.y < -INNER or r.end.x > INNER or r.end.y > INNER:
+		return false
+	if (r.position.x < WALK_HALF and r.end.x > -WALK_HALF) or (r.position.y < WALK_HALF and r.end.y > -WALK_HALF):
+		return false
+	for p in PORTALS:
+		if p.distance_to(p.clamp(r.position, r.end)) < PORTAL_CLEAR:
+			return false
+	return not r.intersects(HIDEOUT_CLEAR)
+
 func bake() -> Dictionary:
-	return {"mesh": commit(pieces, w, true), "fixture": commit({"": fixture}, w, false), "colliders": colliders}
+	return {"mesh": commit(pieces, w, true), "fixture": commit({"": fixture}, w, false), "colliders": colliders, "zones": zones}
 
 ## One surface per material kind; UV.x = the box's index (the glitch shader
 ## moves each box as a whole). Normals only otherwise: materials use world

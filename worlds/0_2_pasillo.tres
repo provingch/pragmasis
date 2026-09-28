@@ -1,0 +1,110 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=24 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_ii80k"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_cccas"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSoffits.gd" id="3_vhp5l"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="4_b48ib"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorTiles.gd" id="5_jsjtr"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorLines.gd" id="6_b02t0"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="7_b1acs"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="8_2in3i"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="9_wcwcy"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="10_1q5rf"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="11_0ujht"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallBays.gd" id="12_6agxw"]
+
+[sub_resource type="Resource" id="Resource_ii80k"]
+script = ExtResource("1_ii80k")
+
+[sub_resource type="Resource" id="Resource_cccas"]
+script = ExtResource("3_vhp5l")
+drop = 0.7
+lane = 3.2
+edge_kind = "grate"
+
+[sub_resource type="Resource" id="Resource_vhp5l"]
+script = ExtResource("4_b48ib")
+size = Vector3(0.6, 0.14, 0.6)
+offset = -0.07
+
+[sub_resource type="Resource" id="Resource_b48ib"]
+script = ExtResource("5_jsjtr")
+count = 10
+pitch = 1.0
+tile = 0.3
+thickness = 0.01
+top_min = 0.005
+tile_kind = "dark"
+base_kind = "floor"
+
+[sub_resource type="Resource" id="Resource_jsjtr"]
+script = ExtResource("6_b02t0")
+along_x = PackedFloat32Array(-1.35, 1.35)
+along_z = PackedFloat32Array(-1.35, 1.35)
+width = 0.12
+height = 0.012
+
+[sub_resource type="Resource" id="Resource_b02t0"]
+script = ExtResource("7_b1acs")
+dressing = 2
+
+[sub_resource type="Resource" id="Resource_b1acs"]
+script = ExtResource("8_2in3i")
+lowpass_hz = 2800.0
+pitch = 0.96
+volume_db = -3.0
+
+[sub_resource type="Resource" id="Resource_2in3i"]
+script = ExtResource("10_1q5rf")
+
+[sub_resource type="Resource" id="Resource_wcwcy"]
+script = ExtResource("11_0ujht")
+y = 0.65
+height = 1.3
+depth = 0.04
+kind = "dark"
+
+[sub_resource type="Resource" id="Resource_1q5rf"]
+script = ExtResource("11_0ujht")
+y = 1.32
+height = 0.07
+depth = 0.08
+kind = "grate"
+
+[sub_resource type="Resource" id="Resource_0ujht"]
+script = ExtResource("12_6agxw")
+width = 1.3
+height = 2.9
+frame = 0.14
+depth = 0.12
+frame_kind = "dark"
+knob_kind = "trim"
+
+[resource]
+script = ExtResource("9_wcwcy")
+id = &"pasillo"
+display_name = "PASILLO"
+slot = 2
+wall_color = Color(0.47843137, 0.3529412, 0.22745098, 1)
+floor_color = Color(0.3529412, 0.05882353, 0.07058824, 1)
+accent_color = Color(0.43137255, 0.2627451, 0.14901961, 1)
+trim_color = Color(1, 0.72156864, 0.3529412, 1)
+light_color = Color(1, 0.7882353, 0.5411765, 1)
+fog_color = Color(0.078431375, 0.03137255, 0.023529412, 1)
+light_energy = 1.4
+light_y = 3.0
+fog_begin = 6.0
+ambient = 0.25
+roughness = 0.85
+height = 3.8
+floor_kit = SubResource("Resource_b48ib")
+wall_kit = SubResource("Resource_2in3i")
+wall_props = Array[ExtResource("2_cccas")]([SubResource("Resource_wcwcy"), SubResource("Resource_1q5rf"), SubResource("Resource_0ujht")])
+ceiling_kit = SubResource("Resource_ii80k")
+ceiling_props = Array[ExtResource("2_cccas")]([SubResource("Resource_cccas"), SubResource("Resource_vhp5l")])
+floor_props = Array[ExtResource("2_cccas")]([SubResource("Resource_jsjtr")])
+hideout = SubResource("Resource_b02t0")
+music = "res://audio/music/umbral.tres"
+music_fx = SubResource("Resource_b1acs")
+threat = 1.1
+visibility = 1.3

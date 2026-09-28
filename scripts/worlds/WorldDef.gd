@@ -26,6 +26,8 @@ class_name WorldDef
 @export var trim_color := Color.WHITE
 @export var light_color := Color.WHITE
 @export var fog_color := Color.BLACK
+## Surface of the "water" kind.
+@export var water_color := Color(0.1, 0.18, 0.2)
 
 @export_group("Luz y niebla")
 @export var light_energy := 1.6
@@ -33,6 +35,8 @@ class_name WorldDef
 @export var light_y := 3.5
 @export_enum("steady", "stutter", "breathe", "heartbeat", "glitch") var flicker := "steady"
 @export var fog_begin := 10.0
+## Ambient light, in light_color.
+@export var ambient := 0.4
 
 @export_group("Superficies")
 @export_range(0.0, 1.0) var roughness := 0.9
@@ -57,6 +61,8 @@ class_name WorldDef
 @export_group("Música")
 ## A MusicTrack (.tres): stream + loop point. Several worlds may share one.
 @export_file("*.tres") var music := ""
+## Effects on the Music bus while here (none = neutral).
+@export var music_fx: MusicFX
 
 @export_group("Juego")
 ## Divides the entity's spawn delay while the player is in this world.

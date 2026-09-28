@@ -37,8 +37,9 @@ const HIDE_REACH := 1.3
 const PHASE_PORTAL_SCENE := preload("res://scenes/rooms/PhasePortal.tscn")
 const ANCHOR_SCENE := preload("res://scenes/rooms/Anchor.tscn")
 const GLITCH_SHADER := preload("res://shaders/glitch.gdshader")
+const WATER_SHADER := preload("res://shaders/water.gdshader")
 ## Every material kind a kit may use; each world warms them all up.
-const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch"]
+const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch", "water"]
 
 enum Exit { NORTH, SOUTH, EAST, WEST }
 
@@ -52,6 +53,7 @@ enum Exit { NORTH, SOUTH, EAST, WEST }
 var variant := 0
 var hideout := false
 var has_anchor := false
+var _zones: Array = []
 
 static var _materials := {}
 static var _grime := {} # frequency -> ImageTexture
@@ -79,6 +81,7 @@ func _ready() -> void:
 	_def = Worlds.def(w)
 	_seed = randf() * 100.0
 	var built := geometry(w, exits, variant)
+	_zones = built.zones
 	_mesh = _instance(built.mesh)
 	_fixture_mat = StandardMaterial3D.new()
 	_fixture_mat.albedo_color = _def.light_color
@@ -139,6 +142,15 @@ func _process(delta: float) -> void:
 		k = 0.05 if randf() < 0.4 else randf_range(0.2, 1.7)
 	_light.light_energy = _base_energy * k
 	_fixture_mat.emission_energy_multiplier = 4.0 * k
+
+## The player's speed multiplier at a point in this room (local x/z):
+## the slowest floor zone it's in.
+func speed_at(local: Vector3) -> float:
+	var k := 1.0
+	for z: Array in _zones:
+		if (z[0] as Rect2).has_point(Vector2(local.x, local.z)):
+			k = minf(k, z[1])
+	return k
 
 ## Violent flicker for a while: the entity is about to manifest, or the
 ## hideout is giving way.
@@ -260,6 +272,11 @@ static func layer_material(lw: int, kind: String) -> Material:
 			sm.shader = GLITCH_SHADER
 			sm.set_shader_parameter("albedo", s.accent_color)
 			sm.set_shader_parameter("emission", s.trim_color)
+			mat = sm
+		"water":
+			var sm := ShaderMaterial.new()
+			sm.shader = WATER_SHADER
+			sm.set_shader_parameter("albedo", s.water_color)
 			mat = sm
 		"trim", "edge", "grate":
 			var sm := StandardMaterial3D.new()

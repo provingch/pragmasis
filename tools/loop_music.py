@@ -29,7 +29,7 @@ import numpy as np
 
 SR = 48000
 ROOT = Path(__file__).resolve().parent.parent
-TRACKS = ["carne", "sedimento", "umbral", "eter", "estatica", "persecucion"]
+TRACKS = ["carne", "sedimento", "umbral", "eter", "estatica", "persecucion", "nucleo"]
 HOP = 1024
 CONTEXT = 2.0     # seconds compared before each candidate point
 XFADE = 1.0       # seconds of crossfade baked in before E
@@ -118,11 +118,14 @@ def process(name: str) -> tuple[float, float, float]:
 
 
 def write_track(name: str, offset: float) -> None:
-    """Sets loop_offset in the MusicTrack .tres (keeping the rest of it)."""
+    """Sets loop_offset in the MusicTrack .tres (keeping the rest of it). A
+    placeholder .tres borrowing another track's stream is pointed at its own."""
     path = ROOT / "audio/music" / f"{name}.tres"
     line = f"loop_offset = {offset:.6f}"
     if path.exists():
-        text = path.read_text()
+        # (Godot resolves a uid before the path: drop it.)
+        text = re.sub(r'\[ext_resource type="AudioStream"[^\]]*id="([^"]*)"\]',
+                      rf'[ext_resource type="AudioStream" path="res://audio/music/{name}.ogg" id="\1"]', path.read_text())
         if "loop_offset = " in text:
             text = re.sub(r"loop_offset = [\d.]+", line, text)
         else:

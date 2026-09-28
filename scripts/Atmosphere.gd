@@ -9,7 +9,6 @@ func _ready() -> void:
 	var env := environment
 	env.background_mode = Environment.BG_COLOR
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_energy = 0.4
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
 	env.tonemap_exposure = 1.1
 	env.glow_intensity = 0.9
@@ -42,9 +41,11 @@ func _apply(w: int, time: float) -> void:
 		env.fog_depth_begin = s.fog_begin
 		env.background_color = s.fog_color
 		env.ambient_light_color = s.light_color
+		env.ambient_light_energy = s.ambient
 		return
 	var tw := create_tween().set_parallel()
 	tw.tween_property(env, "fog_light_color", s.fog_color, time)
 	tw.tween_property(env, "fog_depth_begin", s.fog_begin, time)
 	tw.tween_property(env, "background_color", s.fog_color, time)
 	tw.tween_property(env, "ambient_light_color", s.light_color, time)
+	tw.tween_property(env, "ambient_light_energy", s.ambient, time)
