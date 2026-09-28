@@ -3,3 +3,7 @@
 *.import
 export.cfg
 export_presets.cfg
+
+# Arneses de depuración temporales (scratch en la raíz, prefijo "_")
+/_*
+/override.cfg
