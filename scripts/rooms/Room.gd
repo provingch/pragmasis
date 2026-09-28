@@ -25,11 +25,17 @@ enum Exit { NORTH, SOUTH, EAST, WEST }
 
 # Shared across all rooms of a layer: 3 materials per layer.
 static var _materials := {}
+# Only ~10 distinct box sizes exist; fetch each one's vertex arrays once.
+# Reading a Mesh's arrays is a GPU readback with a sync (that's what makes
+# SurfaceTool.append_from cost ~9 ms per room), so never do it per room.
+static var _box_arrays := {}
+static var _box_shapes := {}
 
-# Each room is two merged meshes instead of ~20 boxes: one draw call per
-# material instead of per box, which is what keeps ~70 attached rooms cheap.
-var _solid: CSGCombiner3D
-var _deco: CSGCombiner3D
+# Geometry is one MeshInstance3D (one surface per material: floor, wall,
+# trim, fixture) and one StaticBody3D with a BoxShape3D per physical piece.
+# Plain boxes, no CSG: nothing to recompute at runtime.
+var _pieces := {} # Material -> [[size, pos], ...], only while building
+var _body: StaticBody3D
 var _light: OmniLight3D
 var _fixture_mat: StandardMaterial3D
 var _style: Dictionary
@@ -40,12 +46,12 @@ var _seed := 0.0
 func _ready() -> void:
 	_style = DimensionState.LAYERS[w]
 	_seed = randf() * 100.0
-	_solid = _combiner(true)
-	_deco = _combiner(false)
-	_deco.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_body = StaticBody3D.new()
+	add_child(_body)
 	_build_floor_ceiling()
 	_build_walls()
 	_build_light()
+	_commit_mesh()
 	# Opposite corners so both portals can coexist in one room.
 	var corner := ROOM_SIZE / 2.0 - PORTAL_INSET
 	if phase_positive:
@@ -77,19 +83,68 @@ func _build_phase_portal(direction: int, pos: Vector3) -> void:
 	portal.position = pos
 	add_child(portal)
 
-func _combiner(collide: bool) -> CSGCombiner3D:
-	var c := CSGCombiner3D.new()
-	c.use_collision = collide
-	c.visibility_range_end = VIS_RANGE
-	add_child(c)
-	return c
-
+## Adds a box to this room's mesh (grouped by material) and, if solid, a
+## matching collision box.
 func _box(size: Vector3, pos: Vector3, mat: Material, collide := true) -> void:
-	var box := CSGBox3D.new()
-	box.size = size
-	box.position = pos
-	box.material = mat
-	(_solid if collide else _deco).add_child(box)
+	if not _pieces.has(mat):
+		_pieces[mat] = []
+	_pieces[mat].append([size, pos])
+	if collide:
+		if not _box_shapes.has(size):
+			var bs := BoxShape3D.new()
+			bs.size = size
+			_box_shapes[size] = bs
+		var cs := CollisionShape3D.new()
+		cs.shape = _box_shapes[size]
+		cs.position = pos
+		_body.add_child(cs)
+
+## Concatenates every box of each material into one surface. Normals only:
+## materials use world triplanar mapping, so no UVs.
+func _commit_mesh() -> void:
+	var mesh := ArrayMesh.new()
+	for mat: Material in _pieces:
+		var verts := PackedVector3Array()
+		var normals := PackedVector3Array()
+		var indices := PackedInt32Array()
+		for piece: Array in _pieces[mat]:
+			var src := _box_arrays_for(piece[0])
+			var pos: Vector3 = piece[1]
+			var base := verts.size()
+			for v: Vector3 in src[Mesh.ARRAY_VERTEX]:
+				verts.append(v + pos)
+			normals.append_array(src[Mesh.ARRAY_NORMAL])
+			for i: int in src[Mesh.ARRAY_INDEX]:
+				indices.append(base + i)
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = verts
+		arrays[Mesh.ARRAY_NORMAL] = normals
+		arrays[Mesh.ARRAY_INDEX] = indices
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		mesh.surface_set_material(mesh.get_surface_count() - 1, mat)
+	_pieces.clear()
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	# Dither out over the last metres instead of popping to a black hole at
+	# the end of long straight corridors.
+	mi.visibility_range_end = VIS_RANGE
+	mi.visibility_range_end_margin = 10.0
+	mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+	add_child(mi)
+
+static func _box_arrays_for(size: Vector3) -> Array:
+	if not _box_arrays.has(size):
+		var bm := BoxMesh.new()
+		bm.size = size
+		_box_arrays[size] = bm.get_mesh_arrays()
+	return _box_arrays[size]
+
+## Real-time omni shadows re-render the scene 6x per light; RoomGenerator
+## turns them on only for the room the player is in.
+func set_shadow(on: bool) -> void:
+	if _light:
+		_light.shadow_enabled = on
 
 func _build_floor_ceiling() -> void:
 	_box(Vector3(ROOM_SIZE, WALL_THICKNESS, ROOM_SIZE), Vector3(0, -WALL_THICKNESS / 2.0, 0), _layer_material("floor"))
@@ -128,13 +183,10 @@ func _build_light() -> void:
 	_light.omni_attenuation = 0.8
 	_light.light_color = _style.light
 	_base_energy = _style.light_energy
-	_light.shadow_enabled = true
-	# Up to ~170 rooms are attached; only nearby lights are worth it, and
-	# omni shadows re-render the scene 6x per light, so only the room you're
-	# in (and a doorway's worth) keeps them.
+	_light.shadow_enabled = false # see set_shadow()
+	# ~50-70 rooms are attached; far lights aren't worth shading.
 	_light.distance_fade_enabled = true
 	_light.distance_fade_begin = 32.0
-	_light.distance_fade_shadow = 9.0
 	_light.distance_fade_length = 10.0
 	add_child(_light)
 

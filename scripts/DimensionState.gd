@@ -23,19 +23,19 @@ const LAYERS := {
 	-1: {
 		"name": "SEDIMENTO", "wall": Color("7d6440"), "floor": Color("3b2f1e"),
 		"trim": Color("ffa630"), "light": Color("ffc070"), "light_energy": 2.2,
-		"fog": Color("2e1f0c"), "fog_density": 0.03, "flicker": "stutter",
+		"fog": Color("2e1f0c"), "fog_begin": 4.0, "flicker": "stutter",
 		"threat": 1.8,
 	},
 	0: {
 		"name": "UMBRAL", "wall": Color("b9b6a6"), "floor": Color("6b695e"),
 		"trim": Color("3fe0c8"), "light": Color("e6f2ea"), "light_energy": 1.6,
-		"fog": Color("0c1411"), "fog_density": 0.018, "flicker": "steady",
+		"fog": Color("0c1411"), "fog_begin": 10.0, "flicker": "steady",
 		"threat": 1.0,
 	},
 	1: {
 		"name": "ÉTER", "wall": Color("5a5288"), "floor": Color("2a2650"),
 		"trim": Color("b48cff"), "light": Color("b0c4ff"), "light_energy": 2.2,
-		"fog": Color("1a1640"), "fog_density": 0.025, "flicker": "breathe",
+		"fog": Color("1a1640"), "fog_begin": 7.0, "flicker": "breathe",
 		"threat": 0.5,
 	},
 }

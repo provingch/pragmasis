@@ -21,6 +21,9 @@ const FREE_RADIUS := 6
 const PORTAL_CHANCE := 1.0 / 12.0
 ## Doors beyond the one every cell is guaranteed (see edge_open).
 const EXTRA_DOOR_CHANCE := 0.3
+## Rooms (Chebyshev) around the player whose light casts real-time shadows.
+## 0 = only the room you're in: one omni shadow instead of ~9.
+const SHADOW_RADIUS := 0
 
 enum Salt { CARVE, EAST, SOUTH, PORTAL, PORTAL_DIR }
 
@@ -67,6 +70,7 @@ func switch_layer(new_w: int) -> void:
 	_set_layer_attached(active_w, false)
 	active_w = new_w
 	_set_layer_attached(active_w, true)
+	_update_shadows()
 
 static func cell_of(pos: Vector3) -> Vector2i:
 	return Vector2i(roundi(pos.x / Room.ROOM_SIZE), roundi(pos.z / Room.ROOM_SIZE))
@@ -92,6 +96,12 @@ func _stream() -> void:
 		# queue_free: some of these are attached and may be mid-frame.
 		rooms[coord].queue_free()
 		rooms.erase(coord)
+	_update_shadows()
+
+func _update_shadows() -> void:
+	for coord in rooms:
+		if coord.w == active_w:
+			rooms[coord].set_shadow(maxi(absi(coord.x - _center.x), absi(coord.z - _center.y)) <= SHADOW_RADIUS)
 
 func _create(x: int, z: int, w: int) -> void:
 	var room := ROOM_SCENE.instantiate() as Room
