@@ -38,8 +38,9 @@ const PHASE_PORTAL_SCENE := preload("res://scenes/rooms/PhasePortal.tscn")
 const ANCHOR_SCENE := preload("res://scenes/rooms/Anchor.tscn")
 const GLITCH_SHADER := preload("res://shaders/glitch.gdshader")
 const WATER_SHADER := preload("res://shaders/water.gdshader")
+const STAINED_SHADER := preload("res://shaders/stained.gdshader")
 ## Every material kind a kit may use; each world warms them all up.
-const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch", "water"]
+const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch", "water", "glass", "stained"]
 
 enum Exit { NORTH, SOUTH, EAST, WEST }
 
@@ -53,6 +54,8 @@ enum Exit { NORTH, SOUTH, EAST, WEST }
 var variant := 0
 var hideout := false
 var has_anchor := false
+## Has its light (see WorldDef.light_chance); a dark room has none at all.
+var lit := true
 var _zones: Array = []
 
 static var _materials := {}
@@ -84,8 +87,8 @@ func _ready() -> void:
 	_zones = built.zones
 	_mesh = _instance(built.mesh)
 	_fixture_mat = StandardMaterial3D.new()
-	_fixture_mat.albedo_color = _def.light_color
-	_fixture_mat.emission_enabled = true
+	_fixture_mat.albedo_color = _def.light_color if lit else _def.wall_color.darkened(0.6)
+	_fixture_mat.emission_enabled = lit
 	_fixture_mat.emission = _def.light_color
 	_fixture = _instance(built.fixture)
 	_fixture.material_override = _fixture_mat
@@ -102,7 +105,10 @@ func _ready() -> void:
 		cs.shape = _shape(c[0])
 		cs.position = c[1]
 		body.add_child(cs)
-	_build_light()
+	if lit:
+		_build_light()
+	else:
+		set_process(false)
 	if has_anchor:
 		add_child(ANCHOR_SCENE.instantiate())
 	if link_target >= 0:
@@ -171,7 +177,8 @@ func set_fog_end(d: float) -> void:
 		for mi in get_children():
 			if mi is MeshInstance3D:
 				mi.visibility_range_end = d + VIS_MARGIN
-		_light.distance_fade_begin = d - 2.0
+		if _light:
+			_light.distance_fade_begin = d - 2.0
 
 func _instance(mesh: Mesh) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
@@ -277,6 +284,20 @@ static func layer_material(lw: int, kind: String) -> Material:
 			var sm := ShaderMaterial.new()
 			sm.shader = WATER_SHADER
 			sm.set_shader_parameter("albedo", s.water_color)
+			mat = sm
+		"stained":
+			var sm := ShaderMaterial.new()
+			sm.shader = STAINED_SHADER
+			sm.set_shader_parameter("albedo", s.accent_color)
+			sm.set_shader_parameter("emission", s.trim_color)
+			mat = sm
+		"glass": # amber, ice: lit from within, faintly
+			var sm := StandardMaterial3D.new()
+			sm.albedo_color = s.trim_color.darkened(0.4)
+			sm.emission_enabled = true
+			sm.emission = s.trim_color
+			sm.emission_energy_multiplier = 0.35
+			sm.roughness = 0.2
 			mat = sm
 		"trim", "edge", "grate":
 			var sm := StandardMaterial3D.new()

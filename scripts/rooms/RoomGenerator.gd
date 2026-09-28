@@ -45,7 +45,7 @@ const BUILD_NOW := 0
 const BUILD_BUDGET_MS := 3.0
 const WARM_BUDGET_MS := 2.0
 
-enum Salt { CARVE, EAST, SOUTH, PORTAL, PORTAL_DIR, STYLE, HIDEOUT, BEACON, ANCHOR }
+enum Salt { CARVE, EAST, SOUTH, PORTAL, PORTAL_DIR, STYLE, HIDEOUT, BEACON, ANCHOR, LIGHT }
 
 ## Radii are Chebyshev distances in cells, set by Settings (set_radii).
 ## Cells within gen_radius of the player always exist.
@@ -205,6 +205,7 @@ func _build(c: Vector2i) -> void:
 	room.variant = int(_rand(c.x, c.y, active_w, Salt.STYLE) * Room.VARIANTS)
 	room.has_anchor = active_w == anchor_w and c == anchor_cell
 	room.hideout = has_hideout(c.x, c.y, active_w)
+	room.lit = is_lit(c.x, c.y, active_w)
 	var link := link_of(c.x, c.y, active_w)
 	room.link_target = link.x
 	room.link_fissure = link.y == 1
@@ -279,6 +280,11 @@ func has_hideout(x: int, z: int, w: int) -> bool:
 	if w == anchor_w and Vector2i(x, z) == anchor_cell:
 		return false
 	return _rand(x, z, w, Salt.HIDEOUT) < HIDEOUT_CHANCE
+
+## Whether cell (x, z) has its light in world w (WorldDef.light_chance).
+func is_lit(x: int, z: int, w: int) -> bool:
+	var chance := Worlds.def(w).light_chance
+	return chance >= 1.0 or _rand(x, z, w, Salt.LIGHT) < chance
 
 ## Anchor 8-12 rooms from `from`, in a world of `stratum_index`, with a
 ## maze path to it (candidates are tried in hash order until one has).

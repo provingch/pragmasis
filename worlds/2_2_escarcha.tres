@@ -1,0 +1,97 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_4ao2p"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_bjkn1"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingHangers.gd" id="3_40vmj"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="4_n0m63"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorSlab.gd" id="5_k3qt3"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="6_fqiq8"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="7_tk881"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="8_oevl0"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="9_glfds"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="10_ythyl"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallPanels.gd" id="11_8xgy2"]
+
+[sub_resource type="Resource" id="Resource_4ao2p"]
+script = ExtResource("1_4ao2p")
+
+[sub_resource type="Resource" id="Resource_bjkn1"]
+script = ExtResource("3_40vmj")
+count_min = 8
+count_max = 14
+width_min = 0.08
+width_max = 0.2
+length_min = 0.4
+length_max = 1.4
+clearance = 3.2
+taper = 2
+kind = "glass"
+
+[sub_resource type="Resource" id="Resource_40vmj"]
+script = ExtResource("4_n0m63")
+size = Vector3(0.8, 0.1, 0.8)
+offset = -0.05
+
+[sub_resource type="Resource" id="Resource_n0m63"]
+script = ExtResource("5_k3qt3")
+
+[sub_resource type="Resource" id="Resource_k3qt3"]
+script = ExtResource("6_fqiq8")
+body_kind = "wall"
+dressing = 4
+
+[sub_resource type="Resource" id="Resource_fqiq8"]
+script = ExtResource("7_tk881")
+highpass_hz = 900.0
+reverb = 0.3
+reverb_room = 0.6
+
+[sub_resource type="Resource" id="Resource_tk881"]
+script = ExtResource("9_glfds")
+
+[sub_resource type="Resource" id="Resource_oevl0"]
+script = ExtResource("10_ythyl")
+y = 0.2
+height = 0.4
+depth = 0.5
+kind = "floor"
+
+[sub_resource type="Resource" id="Resource_glfds"]
+script = ExtResource("11_8xgy2")
+count_min = 3
+count_max = 6
+height_min = 0.8
+height_max = 2.5
+kind = "glass"
+
+[resource]
+script = ExtResource("8_oevl0")
+id = &"escarcha"
+display_name = "ESCARCHA"
+stratum = 2
+slot = 2
+wall_color = Color(0.8, 0.85882354, 0.92156863, 1)
+floor_color = Color(0.8784314, 0.92156863, 0.9607843, 1)
+accent_color = Color(0.6, 0.72156864, 0.81960785, 1)
+trim_color = Color(0.6, 0.8509804, 1, 1)
+light_color = Color(0.8509804, 0.92156863, 1, 1)
+fog_color = Color(0.72156864, 0.78039217, 0.8509804, 1)
+light_y = 4.5
+fog_begin = 3.5
+ambient = 0.8
+air = "snow"
+roughness = 0.35
+grime_frequency = 0.3
+height = 6.0
+floor_kit = SubResource("Resource_n0m63")
+wall_kit = SubResource("Resource_tk881")
+wall_props = Array[ExtResource("2_bjkn1")]([SubResource("Resource_oevl0"), SubResource("Resource_glfds")])
+ceiling_kit = SubResource("Resource_4ao2p")
+ceiling_props = Array[ExtResource("2_bjkn1")]([SubResource("Resource_bjkn1"), SubResource("Resource_40vmj")])
+hideout = SubResource("Resource_k3qt3")
+music = "res://audio/music/eter.tres"
+music_fx = SubResource("Resource_fqiq8")
+threat = 0.8
+stamina_drain = 1.3
+player_speed = 0.9
+visibility = 0.5

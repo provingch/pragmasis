@@ -37,6 +37,9 @@ class_name WorldDef
 @export var fog_begin := 10.0
 ## Ambient light, in light_color.
 @export var ambient := 0.4
+## Share of rooms (picked per cell, deterministic) that have their light;
+## the rest are dark. 0 = no room lights at all.
+@export_range(0.0, 1.0) var light_chance := 1.0
 ## Particles drifting around the player (see AirParticles).
 @export_enum("none", "sparks", "snow", "dust", "drips") var air := "none"
 

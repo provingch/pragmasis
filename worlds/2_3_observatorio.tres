@@ -1,0 +1,96 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingDome.gd" id="1_pdptk"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_r1cls"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="3_sc84u"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorSlab.gd" id="4_naknr"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorZones.gd" id="5_m6jtp"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="6_6bxyx"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="7_osii2"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="8_qapym"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="9_yt4qd"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="10_basaw"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallRibs.gd" id="11_r1cls"]
+
+[sub_resource type="Resource" id="Resource_r1cls"]
+script = ExtResource("1_pdptk")
+rise = 5.0
+stars = 90
+star_size = 0.07
+
+[sub_resource type="Resource" id="Resource_sc84u"]
+script = ExtResource("3_sc84u")
+size = Vector3(0.3, 0.3, 0.3)
+offset = 0.3
+from_light = true
+
+[sub_resource type="Resource" id="Resource_naknr"]
+script = ExtResource("4_naknr")
+
+[sub_resource type="Resource" id="Resource_m6jtp"]
+script = ExtResource("5_m6jtp")
+rects = Array[Rect2]([Rect2(-1.2, -1.2, 2.4, 2.4)])
+top = 0.01
+kind = "dark"
+rim_kind = "accent"
+rim = 0.08
+speed = 1.0
+
+[sub_resource type="Resource" id="Resource_6bxyx"]
+script = ExtResource("6_6bxyx")
+body_kind = "wall"
+dressing = 4
+
+[sub_resource type="Resource" id="Resource_osii2"]
+script = ExtResource("7_osii2")
+lowpass_hz = 5000.0
+reverb = 0.45
+reverb_room = 0.9
+pitch = 0.9
+
+[sub_resource type="Resource" id="Resource_qapym"]
+script = ExtResource("9_yt4qd")
+
+[sub_resource type="Resource" id="Resource_yt4qd"]
+script = ExtResource("10_basaw")
+y = 1.2
+height = 0.05
+depth = 0.08
+kind = "accent"
+
+[sub_resource type="Resource" id="Resource_basaw"]
+script = ExtResource("11_r1cls")
+spacing = 2.0
+width = 0.08
+depth_min = 0.06
+depth_max = 0.06
+
+[resource]
+script = ExtResource("8_qapym")
+id = &"observatorio"
+display_name = "OBSERVATORIO"
+stratum = 2
+slot = 3
+wall_color = Color(0.16862746, 0.18431373, 0.27058825, 1)
+floor_color = Color(0.101960786, 0.101960786, 0.14901961, 1)
+accent_color = Color(0.54901963, 0.42745098, 0.22745098, 1)
+trim_color = Color(0.9490196, 0.9019608, 0.7019608, 1)
+light_color = Color(0.7019608, 0.7490196, 1, 1)
+fog_color = Color(0.011764706, 0.011764706, 0.03137255, 1)
+light_energy = 3.0
+light_y = 4.2
+fog_begin = 6.0
+ambient = 0.08
+light_chance = 0.34
+height = 4.5
+floor_kit = SubResource("Resource_naknr")
+wall_kit = SubResource("Resource_qapym")
+wall_props = Array[ExtResource("2_r1cls")]([SubResource("Resource_yt4qd"), SubResource("Resource_basaw")])
+ceiling_kit = SubResource("Resource_r1cls")
+ceiling_props = Array[ExtResource("2_r1cls")]([SubResource("Resource_sc84u")])
+floor_props = Array[ExtResource("2_r1cls")]([SubResource("Resource_m6jtp")])
+hideout = SubResource("Resource_6bxyx")
+music = "res://audio/music/eter.tres"
+music_fx = SubResource("Resource_osii2")
+threat = 0.8
+visibility = 0.8
