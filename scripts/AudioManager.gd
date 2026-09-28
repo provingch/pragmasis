@@ -13,7 +13,8 @@ extends Node
 ##
 ## Each world may colour the Music bus (WorldDef.music_fx: filters, reverb,
 ## drive, pitch, level); crossing blends to the new world's preset over the
-## same fade.
+## same fade. A world may also keep the entity's sounds from the player
+## (WorldDef.entity_audio): no stinger, no omen, no chase track there.
 ##
 ## Also plays the non-positional one-shot SFX (play_sfx). Those keep playing
 ## while the tree is paused (game over, options); the music pauses with it.
@@ -37,6 +38,9 @@ const SFX := {
 	&"sequence_done": preload("res://audio/sfx/sequence_done.wav"),
 	&"collapse": preload("res://audio/sfx/collapse.wav"),
 }
+## SFX that are the entity's: silent in worlds without entity_audio.
+const ENTITY_SFX: Array[StringName] = [&"monster", &"omen"]
+
 ## The Music bus's effect chain, in order.
 enum Fx { HIGHPASS, LOWPASS, DISTORTION, PITCH, REVERB }
 
@@ -127,6 +131,8 @@ func _track_player(path: String) -> AudioStreamPlayer:
 	return _music[path]
 
 func play_sfx(key: StringName) -> void:
+	if key in ENTITY_SFX and not Worlds.def(_active_w).entity_audio:
+		return
 	_sfx[key].play()
 
 func start_chase() -> void:
@@ -160,7 +166,8 @@ func _on_layer_changed(new_w: int) -> void:
 func _mix(time: float) -> void:
 	# The world's track may still be loading (crossed right after arriving):
 	# then everything fades out and _process fades it in once it's there.
-	var loud: AudioStreamPlayer = chase_player if _chasing else _music.get(Worlds.def(_active_w).music)
+	var chase := _chasing and Worlds.def(_active_w).entity_audio
+	var loud: AudioStreamPlayer = chase_player if chase else _music.get(Worlds.def(_active_w).music)
 	if _fade:
 		_fade.kill()
 	if time <= 0.0:
