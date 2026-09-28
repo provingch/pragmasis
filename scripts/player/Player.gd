@@ -47,8 +47,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		_yaw_accum += yaw
 		_pitch = clamp(_pitch - event.relative.y * MOUSE_SENSITIVITY, deg_to_rad(-80.0), deg_to_rad(80.0))
 		head.rotation.x = _pitch
-	elif event.is_action_pressed("ui_cancel"):
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED
 
 func _physics_process(delta: float) -> void:
 	if not is_on_floor():

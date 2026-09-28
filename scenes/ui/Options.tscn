@@ -1,0 +1,138 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/Options.gd" id="1_opt"]
+[ext_resource type="Script" path="res://scripts/ui/MenuDecor.gd" id="2_decor"]
+[ext_resource type="Script" path="res://scripts/ui/HudButton.gd" id="3_btn"]
+
+[sub_resource type="Gradient" id="Gradient_dim"]
+offsets = PackedFloat32Array(0.35, 0.75)
+colors = PackedColorArray(0.0196, 0.0196, 0.0235, 0.9, 0.0196, 0.0196, 0.0235, 0.3)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_dim"]
+gradient = SubResource("Gradient_dim")
+width = 256
+height = 4
+
+[node name="Options" type="CanvasLayer"]
+process_mode = 3
+layer = 10
+script = ExtResource("1_opt")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="UI" type="Control" parent="Root"]
+layout_mode = 0
+mouse_filter = 2
+
+[node name="Dim" type="TextureRect" parent="Root/UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_dim")
+expand_mode = 1
+
+[node name="Grid" type="Control" parent="Root/UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("2_decor")
+
+[node name="TopStripe" type="Control" parent="Root/UI"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 4.0
+script = ExtResource("2_decor")
+kind = 2
+
+[node name="BottomStripe" type="Control" parent="Root/UI"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -4.0
+script = ExtResource("2_decor")
+kind = 2
+
+[node name="Panel" type="VBoxContainer" parent="Root/UI"]
+layout_mode = 1
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 56.0
+offset_top = -370.0
+offset_right = 776.0
+offset_bottom = 370.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Stripe" type="Control" parent="Root/UI/Panel"]
+custom_minimum_size = Vector2(210, 6)
+layout_mode = 2
+size_flags_horizontal = 0
+script = ExtResource("2_decor")
+kind = 3
+
+[node name="Title" type="Label" parent="Root/UI/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "OPCIONES"
+
+[node name="Subtitle" type="Label" parent="Root/UI/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "CALIBRACIÓN DE RENDER"
+text_overrun_behavior = 3
+
+[node name="Rows" type="VBoxContainer" parent="Root/UI/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Help" type="Label" parent="Root/UI/Panel"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(720, 48)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="Restart" type="Label" parent="Root/UI/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "▲ REINICIÁ EL JUEGO PARA APLICAR EL MÉTODO DE RENDER"
+
+[node name="Back" type="Button" parent="Root/UI/Panel"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+script = ExtResource("3_btn")
+label = "VOLVER"
+font_size = 28
+
+[node name="Fps" type="Label" parent="Root/UI"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -456.0
+offset_top = 30.0
+offset_right = -56.0
+offset_bottom = 60.0
+grow_horizontal = 0
+horizontal_alignment = 2
+
+[node name="Scanlines" type="Control" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("2_decor")
+kind = 7

@@ -12,24 +12,27 @@ func _ready() -> void:
 	env.ambient_light_energy = 0.4
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
 	env.tonemap_exposure = 1.1
-	env.glow_enabled = true
 	env.glow_intensity = 0.9
 	env.glow_bloom = 0.12
 	env.glow_hdr_threshold = 0.9
-	# Depth fog, fully opaque just before the streamed frontier (the far wall
-	# of the last generated ring is at (GEN_RADIUS + 0.5) rooms), so a long
-	# straight corridor never shows the ungenerated void behind it.
+	# Depth fog, fully opaque at RoomGenerator.fog_end() (see _apply_settings).
 	env.fog_enabled = true
 	env.fog_mode = Environment.FOG_MODE_DEPTH
 	env.fog_density = 1.0
-	env.fog_depth_end = (RoomGenerator.GEN_RADIUS + 0.4) * Room.ROOM_SIZE
 	env.fog_sky_affect = 1.0
-	env.ssao_enabled = true
 	env.adjustment_enabled = true
 	env.adjustment_saturation = 0.85
 	env.adjustment_contrast = 1.1
 	_apply(DimensionState.player_w, 0.0)
 	DimensionState.layer_changed.connect(_apply.bind(BLEND_TIME))
+	_apply_settings()
+	Settings.changed.connect(_apply_settings)
+
+## SSAO, glow and fog reach follow the graphics options, live.
+func _apply_settings() -> void:
+	environment.ssao_enabled = Settings.ssao
+	environment.glow_enabled = Settings.glow
+	environment.fog_depth_end = RoomGenerator.fog_end()
 
 func _apply(w: int, time: float) -> void:
 	var s: Dictionary = DimensionState.LAYERS[w]

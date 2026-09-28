@@ -11,8 +11,9 @@ const DOOR_WIDTH := 3.0
 const PORTAL_INSET := 1.5
 const PORTAL_HEIGHT := 1.5
 const TRIM_HEIGHT := 0.3
-## Beyond this the fog has already eaten everything; skip drawing it.
-const VIS_RANGE := 48.0
+## Past the fog's opaque end, the mesh still draws this far (its origin is
+## the room's centre, its near wall half a room closer) then dithers out.
+const VIS_MARGIN := 14.0
 const PHASE_PORTAL_SCENE := preload("res://scenes/rooms/PhasePortal.tscn")
 
 enum Exit { NORTH, SOUTH, EAST, WEST }
@@ -36,6 +37,7 @@ static var _box_shapes := {}
 # Plain boxes, no CSG: nothing to recompute at runtime.
 var _pieces := {} # Material -> [[size, pos], ...], only while building
 var _body: StaticBody3D
+var _mesh: MeshInstance3D
 var _light: OmniLight3D
 var _fixture_mat: StandardMaterial3D
 var _style: Dictionary
@@ -124,14 +126,13 @@ func _commit_mesh() -> void:
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 		mesh.surface_set_material(mesh.get_surface_count() - 1, mat)
 	_pieces.clear()
-	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
+	_mesh = MeshInstance3D.new()
+	_mesh.mesh = mesh
 	# Dither out over the last metres instead of popping to a black hole at
-	# the end of long straight corridors.
-	mi.visibility_range_end = VIS_RANGE
-	mi.visibility_range_end_margin = 10.0
-	mi.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
-	add_child(mi)
+	# the end of long straight corridors. Range: see set_fog_end.
+	_mesh.visibility_range_end_margin = 10.0
+	_mesh.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
+	add_child(_mesh)
 
 static func _box_arrays_for(size: Vector3) -> Array:
 	if not _box_arrays.has(size):
@@ -145,6 +146,14 @@ static func _box_arrays_for(size: Vector3) -> Array:
 func set_shadow(on: bool) -> void:
 	if _light:
 		_light.shadow_enabled = on
+
+## Beyond the fog's opaque end everything is already eaten: stop drawing
+## the room and shading its light there. Lights were the single biggest GPU
+## cost measured on an integrated GPU.
+func set_fog_end(d: float) -> void:
+	if _mesh:
+		_mesh.visibility_range_end = d + VIS_MARGIN
+		_light.distance_fade_begin = d - 2.0
 
 func _build_floor_ceiling() -> void:
 	_box(Vector3(ROOM_SIZE, WALL_THICKNESS, ROOM_SIZE), Vector3(0, -WALL_THICKNESS / 2.0, 0), layer_material(w, "floor"))
@@ -179,14 +188,17 @@ func _wall_segment(center: Vector3, length: float, is_side: bool) -> void:
 func _build_light() -> void:
 	_light = OmniLight3D.new()
 	_light.position = Vector3(0, ROOM_SIZE - 1.5, 0)
-	_light.omni_range = ROOM_SIZE * 1.6
+	# Just past the room's own corners. Without shadows a wider light only
+	# leaks through walls into the neighbours, and every extra light
+	# overlapping a pixel costs (1.6 rooms: ~4.5 ms more on an Iris GT1).
+	_light.omni_range = ROOM_SIZE * 1.2
 	_light.omni_attenuation = 0.8
 	_light.light_color = _style.light
 	_base_energy = _style.light_energy
 	_light.shadow_enabled = false # see set_shadow()
-	# ~50-70 rooms are attached; far lights aren't worth shading.
+	# ~50-70 rooms are attached; far lights aren't worth shading (begin: see
+	# set_fog_end).
 	_light.distance_fade_enabled = true
-	_light.distance_fade_begin = 32.0
 	_light.distance_fade_length = 10.0
 	add_child(_light)
 

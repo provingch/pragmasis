@@ -1,0 +1,243 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/MainMenu.gd" id="1_menu"]
+[ext_resource type="Script" path="res://scripts/ui/MenuDecor.gd" id="2_decor"]
+[ext_resource type="Script" path="res://scripts/ui/HudButton.gd" id="3_btn"]
+
+[sub_resource type="Gradient" id="Gradient_glow"]
+offsets = PackedFloat32Array(0, 0.6)
+colors = PackedColorArray(0.549, 0.039, 0.078, 0.28, 0.549, 0.039, 0.078, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_glow"]
+gradient = SubResource("Gradient_glow")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_menu")
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 0
+mouse_filter = 2
+
+[node name="Bg" type="ColorRect" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.0196, 0.0196, 0.0235, 1)
+
+[node name="Grid" type="Control" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("2_decor")
+
+[node name="Glow" type="TextureRect" parent="UI"]
+layout_mode = 1
+anchor_left = 0.28
+anchor_top = 0.62
+anchor_right = 0.28
+anchor_bottom = 0.62
+offset_left = -900.0
+offset_top = -700.0
+offset_right = 900.0
+offset_bottom = 700.0
+mouse_filter = 2
+texture = SubResource("GradientTexture2D_glow")
+expand_mode = 1
+
+[node name="Vignette" type="Control" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("2_decor")
+kind = 1
+
+[node name="TopStripe" type="Control" parent="UI"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 4.0
+script = ExtResource("2_decor")
+kind = 2
+
+[node name="BottomStripe" type="Control" parent="UI"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -4.0
+script = ExtResource("2_decor")
+kind = 2
+
+[node name="Logo" type="HBoxContainer" parent="UI"]
+layout_mode = 0
+offset_left = 56.0
+offset_top = 34.0
+offset_right = 300.0
+offset_bottom = 54.0
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Icon" type="Control" parent="UI/Logo"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("2_decor")
+kind = 4
+
+[node name="LogoText" type="Label" parent="UI/Logo"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SISTEMA://PRAGMASIS"
+
+[node name="Tesseract" type="Control" parent="UI"]
+modulate = Color(1, 1, 1, 0.9)
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -550.0
+offset_top = -270.0
+offset_right = -30.0
+offset_bottom = 250.0
+script = ExtResource("2_decor")
+kind = 5
+
+[node name="Content" type="VBoxContainer" parent="UI"]
+layout_mode = 1
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 56.0
+offset_top = -250.0
+offset_right = 756.0
+offset_bottom = 175.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/separation = 14
+
+[node name="Stripe" type="Control" parent="UI/Content"]
+custom_minimum_size = Vector2(210, 6)
+layout_mode = 2
+size_flags_horizontal = 0
+script = ExtResource("2_decor")
+kind = 3
+
+[node name="Title" type="Label" parent="UI/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+text = "PRAGMASIS"
+
+[node name="Subtitle" type="Label" parent="UI/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Escapa a través de la cuarta dimensión"
+uppercase = true
+
+[node name="Spacer" type="Control" parent="UI/Content"]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Menu" type="VBoxContainer" parent="UI/Content"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="NewGame" type="Button" parent="UI/Content/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+script = ExtResource("3_btn")
+label = "NUEVA PARTIDA"
+
+[node name="Continue" type="Button" parent="UI/Content/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+script = ExtResource("3_btn")
+label = "CONTINUAR"
+
+[node name="Options" type="Button" parent="UI/Content/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+script = ExtResource("3_btn")
+label = "OPCIONES"
+
+[node name="Credits" type="Button" parent="UI/Content/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+script = ExtResource("3_btn")
+label = "CRÉDITOS"
+
+[node name="Quit" type="Button" parent="UI/Content/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+script = ExtResource("3_btn")
+label = "SALIR"
+
+[node name="HudBar" type="HBoxContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 56.0
+offset_top = -50.0
+offset_right = -56.0
+offset_bottom = -26.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="StatusBox" type="HBoxContainer" parent="UI/HudBar"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Dot" type="Control" parent="UI/HudBar/StatusBox"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+script = ExtResource("2_decor")
+kind = 6
+
+[node name="Status" type="Label" parent="UI/HudBar/StatusBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SISTEMA ACTIVO"
+
+[node name="Build" type="Label" parent="UI/HudBar"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "BUILD 0.1.0 — ALPHA"
+horizontal_alignment = 1
+
+[node name="Keys" type="Label" parent="UI/HudBar"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "WASD MOVER · SHIFT CORRER · ESC PAUSA"
+
+[node name="Scanlines" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("2_decor")
+kind = 7

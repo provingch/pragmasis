@@ -12,20 +12,21 @@ extends Node
 ## both sides of a shared wall always agree.
 
 const ROOM_SCENE := preload("res://scenes/rooms/Room.tscn")
-## Cells within this Chebyshev distance of the player always exist.
-const GEN_RADIUS := 3
-## Cells farther than this are freed. Gap to GEN_RADIUS avoids churn when
-## pacing back and forth across a cell border.
-const FREE_RADIUS := 6
 ## Per room, any direction: mean 12 rooms walked before meeting a portal.
 const PORTAL_CHANCE := 1.0 / 12.0
 ## Doors beyond the one every cell is guaranteed (see edge_open).
 const EXTRA_DOOR_CHANCE := 0.3
-## Rooms (Chebyshev) around the player whose light casts real-time shadows.
-## 0 = only the room you're in: one omni shadow instead of ~9.
-const SHADOW_RADIUS := 0
 
 enum Salt { CARVE, EAST, SOUTH, PORTAL, PORTAL_DIR }
+
+## Radii are Chebyshev distances in cells, set by Settings (set_radii).
+## Cells within gen_radius of the player always exist.
+var gen_radius := 3
+## Cells farther than this are freed.
+var free_radius := 6
+## Rooms around the player whose light casts real-time shadows. 0 = only
+## the room you're in (one omni shadow instead of ~9); -1 = none.
+var shadow_radius := 0
 
 var rooms: Dictionary[Vector4i, Room] = {}
 var active_w := 0
@@ -49,7 +50,7 @@ func init_world(parent: Node3D, player: Node3D, start_w: int) -> void:
 	_stream()
 
 func _process(_delta: float) -> void:
-	if not is_instance_valid(_player) or not is_instance_valid(_parent):
+	if not is_instance_valid(_player) or not _player.is_inside_tree() or not is_instance_valid(_parent):
 		return
 	var c := cell_of(_player.global_position)
 	if c != _center:
@@ -71,7 +72,21 @@ func switch_layer(new_w: int) -> void:
 	_set_layer_attached(active_w, false)
 	active_w = new_w
 	_set_layer_attached(active_w, true)
-	_update_shadows()
+	_update_rooms()
+
+## Applied live: a running world grows/shrinks to the new radii right away.
+func set_radii(gen: int, free: int, shadow: int) -> void:
+	gen_radius = gen
+	free_radius = free
+	shadow_radius = shadow
+	if is_instance_valid(_parent):
+		_stream()
+
+## Depth fog is fully opaque just before the streamed frontier (the far wall
+## of the last generated ring is at gen_radius + 0.5 rooms), so a long
+## straight corridor never shows the ungenerated void behind it.
+func fog_end() -> float:
+	return (gen_radius + 0.4) * Room.ROOM_SIZE
 
 static func cell_of(pos: Vector3) -> Vector2i:
 	return Vector2i(roundi(pos.x / Room.ROOM_SIZE), roundi(pos.z / Room.ROOM_SIZE))
@@ -79,9 +94,9 @@ static func cell_of(pos: Vector3) -> Vector2i:
 # --- streaming -----------------------------------------------------------------
 
 func _stream() -> void:
-	# ponytail: a border crossing builds up to 7 cells x 3 layers in one frame; spread over frames if it hitches
-	for dx in range(-GEN_RADIUS, GEN_RADIUS + 1):
-		for dz in range(-GEN_RADIUS, GEN_RADIUS + 1):
+	# ponytail: a border crossing builds up to (2 * gen_radius + 1) cells x 3 layers in one frame (a radius change, the whole ring); spread over frames if it hitches
+	for dx in range(-gen_radius, gen_radius + 1):
+		for dz in range(-gen_radius, gen_radius + 1):
 			var x := _center.x + dx
 			var z := _center.y + dz
 			if rooms.has(Vector4i(x, 0, z, active_w)):
@@ -91,18 +106,21 @@ func _stream() -> void:
 
 	var far: Array[Vector4i] = []
 	for coord in rooms:
-		if maxi(absi(coord.x - _center.x), absi(coord.z - _center.y)) > FREE_RADIUS:
+		if maxi(absi(coord.x - _center.x), absi(coord.z - _center.y)) > free_radius:
 			far.append(coord)
 	for coord in far:
 		# queue_free: some of these are attached and may be mid-frame.
 		rooms[coord].queue_free()
 		rooms.erase(coord)
-	_update_shadows()
+	_update_rooms()
 
-func _update_shadows() -> void:
+func _update_rooms() -> void:
+	var fog := fog_end()
 	for coord in rooms:
 		if coord.w == active_w:
-			rooms[coord].set_shadow(maxi(absi(coord.x - _center.x), absi(coord.z - _center.y)) <= SHADOW_RADIUS)
+			var room := rooms[coord]
+			room.set_shadow(maxi(absi(coord.x - _center.x), absi(coord.z - _center.y)) <= shadow_radius)
+			room.set_fog_end(fog)
 
 func _create(x: int, z: int, w: int) -> void:
 	var room := ROOM_SCENE.instantiate() as Room
