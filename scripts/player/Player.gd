@@ -9,6 +9,8 @@ const BOB_FREQ := 1.6
 const BOB_AMP := 0.07
 const WALK_FOV := 75.0
 const RUN_FOV := 86.0
+## Foot strike = the head-bob's low point (sin(_bob_t) == -1), once per cycle.
+const STEP_PHASE := PI * 1.5
 
 # Camera feel: two underdamped springs (they overshoot, then settle), kept
 # small on purpose — tension, not nausea.
@@ -25,6 +27,8 @@ const JERK_DAMP := 11.0
 
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
+@onready var steps_walk: AudioStreamPlayer = $StepsWalk
+@onready var steps_run: AudioStreamPlayer = $StepsRun
 
 var _pitch := 0.0
 var _bob_t := 0.0
@@ -73,9 +77,12 @@ func _physics_process(delta: float) -> void:
 
 	var hspeed := Vector2(velocity.x, velocity.z).length()
 	_bob_amount = clampf(hspeed / RUN_SPEED, 0.0, 1.0)
-	if is_on_floor() and hspeed > 0.1:
-		_bob_t += delta * hspeed * BOB_FREQ
 	var running := Input.is_action_pressed("run") and hspeed > 0.1
+	if is_on_floor() and hspeed > 0.1:
+		var before := _bob_t
+		_bob_t += delta * hspeed * BOB_FREQ
+		if floori((_bob_t - STEP_PHASE) / TAU) != floori((before - STEP_PHASE) / TAU):
+			(steps_run if running else steps_walk).play()
 	camera.fov = lerpf(camera.fov, RUN_FOV if running else WALK_FOV, delta * 6.0)
 
 # Springs run per rendered frame so they stay smooth above 60 fps.

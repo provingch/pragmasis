@@ -7,9 +7,31 @@ extends Node
 ## Exactly one track dominates: the chase while the entity hunts, otherwise
 ## the ambient of the layer the player is in. A layer change mid-chase only
 ## retargets which ambient comes back when the chase ends.
+##
+## Also plays the non-positional one-shot SFX (play_sfx). Those keep playing
+## while the tree is paused (game over, options); the music pauses with it.
 
 const FADE_TIME := 1.5
 const SILENT_DB := -80.0
+## Seconds each track jumps back to when it reaches its end. The only place
+## these live: tools/loop_music.py finds them (and bakes the crossfade that
+## makes the jump seamless) and prints them; paste the output here.
+const LOOP_OFFSETS := {
+	"sedimento": 3.727927,
+	"umbral": 8.605240,
+	"eter": 8.374719,
+	"persecucion": 12.019010,
+}
+const SFX := {
+	&"monster": preload("res://audio/sfx/monster_stinger.wav"),
+	&"game_over": preload("res://audio/sfx/game_over.wav"),
+	&"whoosh_up": preload("res://audio/sfx/whoosh_up.wav"),
+	&"whoosh_down": preload("res://audio/sfx/whoosh_down.wav"),
+	&"ui_hover": preload("res://audio/sfx/ui_hover.wav"),
+	&"ui_select": preload("res://audio/sfx/ui_select.wav"),
+	&"scanner_open": preload("res://audio/sfx/scanner_open.wav"),
+	&"scanner_close": preload("res://audio/sfx/scanner_close.wav"),
+}
 
 @onready var chase_player: AudioStreamPlayer = $ChasePlayer
 @onready var ambient_players: Dictionary[int, AudioStreamPlayer] = {
@@ -22,17 +44,28 @@ const SILENT_DB := -80.0
 var _active_w := 0
 var _chasing := false
 var _fade: Tween
+var _sfx: Dictionary[StringName, AudioStreamPlayer] = {}
 
 func _ready() -> void:
 	for p in _players():
-		var mp3 := p.stream as AudioStreamMP3
-		# ponytail: whole-file loop so a track never ends in silence; fine loop points come later
-		mp3.loop = true
-		mp3.loop_offset = 0.0
+		var ogg := p.stream as AudioStreamOggVorbis
+		ogg.loop = true
+		ogg.loop_offset = LOOP_OFFSETS[ogg.resource_path.get_file().get_basename()]
 		p.play()
+	for key: StringName in SFX:
+		var p := AudioStreamPlayer.new()
+		p.stream = SFX[key]
+		p.bus = &"SFX"
+		p.max_polyphony = 4 # UI hovers can overlap
+		p.process_mode = Node.PROCESS_MODE_ALWAYS
+		add_child(p)
+		_sfx[key] = p
 	_active_w = DimensionState.player_w
 	_mix(0.0)
 	DimensionState.layer_changed.connect(_on_layer_changed)
+
+func play_sfx(key: StringName) -> void:
+	_sfx[key].play()
 
 func start_chase() -> void:
 	_chasing = true
@@ -50,6 +83,7 @@ func reset() -> void:
 	_mix(0.0)
 
 func _on_layer_changed(new_w: int) -> void:
+	play_sfx(&"whoosh_up" if new_w > _active_w else &"whoosh_down")
 	_active_w = new_w
 	_mix(FADE_TIME)
 

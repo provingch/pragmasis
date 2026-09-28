@@ -13,6 +13,7 @@ class_name PhasePortal
 @onready var light: OmniLight3D = $Light
 @onready var motes: CPUParticles3D = $Motes
 @onready var label: Label3D = $Label
+@onready var hum: AudioStreamPlayer3D = $Hum
 
 var _t := 0.0
 
@@ -28,6 +29,8 @@ func _ready() -> void:
 	label.font = Fonts.mono
 	label.text = "%s W%+d\n%s" % ["▲" if direction > 0 else "▼", target_w, style.name]
 	_t = randf() * 10.0
+	# Findable by ear, and which way it leads: up-portals hum higher.
+	hum.pitch_scale = 1.12 if direction > 0 else 0.89
 
 func _process(delta: float) -> void:
 	_t += delta

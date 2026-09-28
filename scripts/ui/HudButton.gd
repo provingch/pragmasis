@@ -34,6 +34,9 @@ func _ready() -> void:
 	if custom_minimum_size.x == 0.0:
 		custom_minimum_size.x = PAD_L + MARK + GAP + _font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + PAD_R
 	mouse_entered.connect(grab_focus)
+	focus_entered.connect(AudioManager.play_sfx.bind(&"ui_hover"))
+	pressed.connect(AudioManager.play_sfx.bind(&"ui_select"))
+	stepped.connect(func(_dir: int) -> void: AudioManager.play_sfx(&"ui_select"))
 	focus_entered.connect(queue_redraw)
 	focus_exited.connect(queue_redraw)
 

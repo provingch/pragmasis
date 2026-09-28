@@ -28,6 +28,7 @@ var _t := 0.0
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("scanner"):
 		_open = not _open
+		AudioManager.play_sfx(&"scanner_open" if _open else &"scanner_close")
 
 func _process(delta: float) -> void:
 	_t += delta

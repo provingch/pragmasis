@@ -7,3 +7,6 @@ export_presets.cfg
 # Arneses de depuración temporales (scratch en la raíz, prefijo "_")
 /_*
 /override.cfg
+
+# Caché de Python de tools/
+__pycache__/

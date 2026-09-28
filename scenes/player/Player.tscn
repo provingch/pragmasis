@@ -1,6 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://dqx1m3n8v2t5b"]
+[gd_scene load_steps=5 format=3 uid="uid://dqx1m3n8v2t5b"]
 
 [ext_resource type="Script" path="res://scripts/player/Player.gd" id="1_player"]
+[ext_resource type="AudioStream" path="res://audio/sfx/steps_walk.tres" id="2_walk"]
+[ext_resource type="AudioStream" path="res://audio/sfx/steps_run.tres" id="3_run"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -18,3 +20,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Head"]
 current = true
+
+[node name="StepsWalk" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("2_walk")
+volume_db = -6.0
+bus = &"SFX"
+
+[node name="StepsRun" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("3_run")
+volume_db = -3.0
+bus = &"SFX"

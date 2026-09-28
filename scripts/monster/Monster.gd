@@ -71,6 +71,7 @@ func _activate() -> void:
 	set_physics_process(true)
 	catch_area.monitoring = true
 	AudioManager.start_chase()
+	AudioManager.play_sfx(&"monster")
 	# Manifest: unfolds out of nothing.
 	tesseract.scale = Vector3.ZERO
 	create_tween().tween_property(tesseract, "scale", Vector3.ONE, 1.2) \

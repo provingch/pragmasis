@@ -1,7 +1,8 @@
-[gd_scene load_steps=10 format=3 uid="uid://b7phs4prt1lq2"]
+[gd_scene load_steps=11 format=3 uid="uid://b7phs4prt1lq2"]
 
 [ext_resource type="Script" path="res://scripts/rooms/PhasePortal.gd" id="1_portal"]
 [ext_resource type="Shader" path="res://shaders/phase_portal.gdshader" id="2_shader"]
+[ext_resource type="AudioStream" path="res://audio/sfx/portal_hum.wav" id="3_hum"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_portal"]
 radius = 0.9
@@ -77,3 +78,11 @@ pixel_size = 0.004
 billboard = 1
 font_size = 40
 outline_size = 0
+
+[node name="Hum" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("3_hum")
+volume_db = -8.0
+unit_size = 2.0
+max_distance = 16.0
+autoplay = true
+bus = &"SFX"

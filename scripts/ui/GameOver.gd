@@ -14,6 +14,7 @@ func _ready() -> void:
 	GameManager.game_over.connect(_on_game_over)
 
 func _on_game_over() -> void:
+	AudioManager.play_sfx(&"game_over")
 	var w := DimensionState.player_w
 	detail.text = "CAPTURADO EN W%+d // %s" % [w, DimensionState.LAYERS[w].name]
 	visible = true
