@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MusicTrack" load_steps=3 format=3]
+
+; Placeholder: borrows estatica's stream until tools/music_src/vacio.mp3 exists
+; (then `uv run tools/loop_music.py vacio` points this at vacio.ogg).
+
+[ext_resource type="Script" path="res://scripts/audio/MusicTrack.gd" id="1"]
+[ext_resource type="AudioStream" path="res://audio/music/estatica.ogg" id="2"]
+
+[resource]
+script = ExtResource("1")
+stream = ExtResource("2")
+loop_offset = 3.387344

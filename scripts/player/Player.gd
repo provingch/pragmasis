@@ -22,6 +22,14 @@ const WALK_FOV := 75.0
 const RUN_FOV := 86.0
 ## Foot strike = the head-bob's low point (sin(_bob_t) == -1), once per cycle.
 const STEP_PHASE := PI * 1.5
+## Flashlight (worlds with WorldDef.flashlight): a full battery lasts
+## BATTERY_TIME seconds on; it recharges only while off, from empty in
+## RECHARGE_TIME. Emptying it switches it off; F turns it back on.
+const BATTERY_TIME := 50.0
+const RECHARGE_TIME := 110.0
+## Below this charge it starts to stutter.
+const BATTERY_LOW := 0.15
+const FLASH_ENERGY := 6.0
 
 # Camera feel: two underdamped springs (they overshoot, then settle), kept
 # small on purpose — tension, not nausea.
@@ -50,6 +58,9 @@ var hidden := false
 var hide_t := 0.0
 var _since_sprint := 0.0
 var _hide_room: Room
+var battery := 1.0
+var flashlight_on := true
+var _flash: SpotLight3D
 
 var _pitch := 0.0
 var _bob_t := 0.0
@@ -64,8 +75,28 @@ var _prev_vel := Vector3.ZERO
 func _ready() -> void:
 	add_to_group("player")
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	_flash = SpotLight3D.new()
+	_flash.spot_range = 16.0
+	_flash.spot_angle = 26.0
+	_flash.spot_attenuation = 0.5
+	_flash.light_energy = FLASH_ENERGY
+	_flash.light_color = Color(1.0, 0.95, 0.85)
+	_flash.visible = false
+	camera.add_child(_flash)
+	_flash_shadow()
+	Settings.changed.connect(_flash_shadow)
+
+## Its shadow re-renders the scene once: only if the preset has shadows.
+func _flash_shadow() -> void:
+	_flash.shadow_enabled = Settings.shadow_radius >= 0
+
+## Whether the world you're in hands you a flashlight.
+func has_flashlight() -> bool:
+	return Worlds.def(DimensionState.player_w).flashlight
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("flashlight") and has_flashlight():
+		flashlight_on = not flashlight_on and battery > 0.0
 	if event.is_action_pressed("interact"):
 		if hidden:
 			leave_hideout()
@@ -84,6 +115,7 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= GRAVITY * delta
 
+	_tick_flashlight(delta)
 	if hidden:
 		_tick_hideout(delta)
 		return
@@ -142,6 +174,21 @@ func _tick_stamina(delta: float, sprinting: bool) -> void:
 		breath.volume_db = linear_to_db(clampf(exhausted / EXHAUST_TIME + (1.0 - stamina) * 0.5, 0.0, 1.0))
 		if exhausted <= 0.0 and stamina > 0.5:
 			breath.stop()
+
+func _tick_flashlight(delta: float) -> void:
+	var lit := has_flashlight() and flashlight_on
+	if lit:
+		battery = maxf(battery - delta / BATTERY_TIME, 0.0)
+		flashlight_on = battery > 0.0
+	else:
+		battery = minf(battery + delta / RECHARGE_TIME, 1.0)
+	_flash.visible = lit
+	# Low battery stutters; so does something folding in nearby.
+	var monster := get_tree().get_first_node_in_group("monster") as Monster
+	var omen := monster != null and monster.omen_left > 0.0
+	_flash.light_energy = FLASH_ENERGY
+	if (battery < BATTERY_LOW and randf() < 0.08) or (omen and randf() < 0.3):
+		_flash.light_energy = randf_range(0.0, 1.2)
 
 # --- hideouts -------------------------------------------------------------------------
 

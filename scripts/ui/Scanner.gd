@@ -5,8 +5,11 @@ extends Control
 ## "the way out": the anchor and the "safe to cross" verdict. Layers are told
 ## apart by label and line weight, not hue. Square corners only.
 ##
-## Closed, it's the HUD: layer, sequence clock, stamina, hideout prompt,
-## and the centre-screen announcements.
+## Closed, it's the HUD: layer, sequence clock, stamina, flashlight
+## battery, hideout prompt, and the centre-screen announcements.
+##
+## In a world with scanner_mirror the maps (and the anchor's ΔX) come out
+## flipped left/right. The tell: now and then the header flips too.
 
 const BG := Color("0a0a0a")
 const FG := Color("eaeaea")
@@ -23,10 +26,15 @@ const CELL := 34.0
 const SCAN_RADIUS := 1
 const OPEN_TIME := 0.22
 const SWEEP_PERIOD := 2.4
+## Mirrored worlds: the header flips for HEADER_FLIP of every HEADER_FLIP_EVERY seconds.
+const HEADER_FLIP := 0.3
+const HEADER_FLIP_EVERY := 2.2
 
 var _open := false
 var _open_t := 0.0
 var _t := 0.0
+## The open device's transform (its power-on unfold), to draw panels under.
+var _device_xf := Transform2D()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("scanner"):
@@ -65,6 +73,8 @@ func _draw_compact() -> void:
 	_draw_clock(blink)
 	if player:
 		_draw_stamina(Vector2(24, size.y - 92), player)
+		if player.has_flashlight():
+			_draw_battery(Vector2(24, size.y - 110), player)
 		_draw_prompt(player)
 	if GameManager.banner_t > 0.0:
 		_draw_banner()
@@ -92,6 +102,19 @@ func _draw_stamina(p: Vector2, player: Player) -> void:
 		var r := Rect2(p.x + 70 + i * 9, p.y - 7, 7, 6)
 		if i < filled:
 			draw_rect(r, col)
+		else:
+			draw_rect(r, DIM, false, 1.0)
+
+## Ten blocks, always shown where there's a flashlight; red when low.
+func _draw_battery(p: Vector2, player: Player) -> void:
+	var low := player.battery < Player.BATTERY_LOW
+	var col := RED if low else FG
+	_text(p, "LINTERNA [F]" if player.flashlight_on else "LINTERNA OFF", col if low else DIM, 10)
+	var filled := ceili(player.battery * 10.0)
+	for i in 10:
+		var r := Rect2(p.x + 100 + i * 9, p.y - 7, 7, 6)
+		if i < filled:
+			draw_rect(r, col if player.flashlight_on else DIM)
 		else:
 			draw_rect(r, DIM, false, 1.0)
 
@@ -124,7 +147,8 @@ func _draw_device() -> void:
 	var jitter := 0.0
 	if _entity_hunting_here() and randf() < 0.12:
 		jitter = randf_range(-6.0, 6.0)
-	draw_set_transform(origin + Vector2(jitter, DEVICE.y / 2.0 * (1.0 - e)), 0.0, Vector2(1.0, e))
+	_device_xf = Transform2D(0.0, Vector2(1.0, e), 0.0, origin + Vector2(jitter, DEVICE.y / 2.0 * (1.0 - e)))
+	draw_set_transform_matrix(_device_xf)
 
 	draw_rect(Rect2(Vector2.ZERO, DEVICE), BG)
 	_draw_header()
@@ -137,7 +161,12 @@ func _draw_device() -> void:
 	draw_set_transform(Vector2.ZERO)
 
 func _draw_header() -> void:
+	var flip := _mirrored() and fmod(_t, HEADER_FLIP_EVERY) < HEADER_FLIP
+	if flip:
+		_mirror_about(DEVICE.x / 2.0)
 	_text(Vector2(14, 20), "[ PRAGMASIS // ESCÁNER DE FASE ]", FG, 12)
+	if flip:
+		draw_set_transform_matrix(_device_xf)
 	_text(Vector2(DEVICE.x - 250, 20), "REV 0.4   UNIT / W-SCAN-03", DIM, 11, 236, HORIZONTAL_ALIGNMENT_RIGHT)
 	draw_line(Vector2(0, HEADER_H), Vector2(DEVICE.x, HEADER_H), FG, 1.0)
 	draw_line(Vector2(0, DEVICE.y - FOOTER_H), Vector2(DEVICE.x, DEVICE.y - FOOTER_H), FG, 1.0)
@@ -159,7 +188,7 @@ func _draw_side() -> void:
 	# The way out: cells to go and the anchor's layer.
 	var to := RoomGenerator.anchor_cell - cell
 	var aw := RoomGenerator.anchor_w
-	_text(Vector2(16, HEADER_H + 188), "ANCLA   ΔX%+d ΔZ%+d" % [to.x, to.y], GREEN, 11)
+	_text(Vector2(16, HEADER_H + 188), "ANCLA   ΔX%+d ΔZ%+d" % [-to.x if _mirrored() else to.x, to.y], GREEN, 11)
 	var where := "EN TU FASE" if aw == w else "EN %s // E%d" % [Worlds.def(aw).display_name, Worlds.stratum(aw) + 1]
 	_text(Vector2(16, HEADER_H + 204), where, GREEN if aw == w else FG, 10)
 	# Threat meter: this world's intrinsic hostility, 5 blocks = x2.0.
@@ -200,7 +229,10 @@ func _draw_panels() -> void:
 		if not in_range:
 			_draw_no_signal(Rect2(p0, Vector2.ONE * panel))
 			continue
+		if _mirrored():
+			_mirror_about(p0.x + panel / 2.0)
 		_draw_layer_contents(p0, w, here)
+		draw_set_transform_matrix(_device_xf)
 
 ## Window of cells around the player: real walls with door gaps, portal
 ## glyphs, crosshairs at interior corners.
@@ -327,6 +359,13 @@ func _draw_degradation() -> void:
 
 func _text(pos: Vector2, s: String, col: Color, fs: int, width := -1.0, align := HORIZONTAL_ALIGNMENT_LEFT) -> void:
 	draw_string(Fonts.mono, pos, s.to_upper(), align, width, fs, col)
+
+func _mirrored() -> bool:
+	return Worlds.def(DimensionState.player_w).scanner_mirror
+
+## Draws what follows flipped about the vertical line x (device space).
+func _mirror_about(x: float) -> void:
+	draw_set_transform_matrix(_device_xf * Transform2D(Vector2(-1, 0), Vector2(0, 1), Vector2(2.0 * x, 0)))
 
 func _player() -> Player:
 	return get_tree().get_first_node_in_group("player") as Player

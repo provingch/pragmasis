@@ -39,8 +39,9 @@ const ANCHOR_SCENE := preload("res://scenes/rooms/Anchor.tscn")
 const GLITCH_SHADER := preload("res://shaders/glitch.gdshader")
 const WATER_SHADER := preload("res://shaders/water.gdshader")
 const STAINED_SHADER := preload("res://shaders/stained.gdshader")
+const SPIN_SHADER := preload("res://shaders/spin.gdshader")
 ## Every material kind a kit may use; each world warms them all up.
-const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch", "water", "glass", "stained"]
+const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch", "water", "glass", "stained", "spin"]
 
 enum Exit { NORTH, SOUTH, EAST, WEST }
 
@@ -285,9 +286,9 @@ static func layer_material(lw: int, kind: String) -> Material:
 			sm.shader = WATER_SHADER
 			sm.set_shader_parameter("albedo", s.water_color)
 			mat = sm
-		"stained":
+		"stained", "spin":
 			var sm := ShaderMaterial.new()
-			sm.shader = STAINED_SHADER
+			sm.shader = STAINED_SHADER if kind == "stained" else SPIN_SHADER
 			sm.set_shader_parameter("albedo", s.accent_color)
 			sm.set_shader_parameter("emission", s.trim_color)
 			mat = sm

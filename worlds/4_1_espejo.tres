@@ -1,0 +1,89 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_himra"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_k6e66"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorLines.gd" id="3_ikk5k"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="4_vnm65"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorTiles.gd" id="5_yj8q8"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="6_1itpe"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="7_negil"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="8_e6xgb"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="9_wk2mr"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallBays.gd" id="10_ji5mu"]
+
+[sub_resource type="Resource" id="Resource_himra"]
+script = ExtResource("1_himra")
+
+[sub_resource type="Resource" id="Resource_k6e66"]
+script = ExtResource("3_ikk5k")
+along_x = PackedFloat32Array(0)
+along_z = PackedFloat32Array(0)
+width = 0.06
+kind = "trim"
+from_ceiling = true
+
+[sub_resource type="Resource" id="Resource_ikk5k"]
+script = ExtResource("4_vnm65")
+size = Vector3(0.8, 0.04, 0.8)
+offset = -0.05
+
+[sub_resource type="Resource" id="Resource_vnm65"]
+script = ExtResource("5_yj8q8")
+tile = 1.94
+thickness = 0.02
+top_min = 0.01
+base_kind = "trim"
+
+[sub_resource type="Resource" id="Resource_yj8q8"]
+script = ExtResource("6_1itpe")
+body_kind = "wall"
+front_kind = "wall"
+dressing = 5
+
+[sub_resource type="Resource" id="Resource_1itpe"]
+script = ExtResource("7_negil")
+highpass_hz = 350.0
+reverb = 0.5
+reverb_room = 0.6
+
+[sub_resource type="Resource" id="Resource_negil"]
+script = ExtResource("9_wk2mr")
+
+[sub_resource type="Resource" id="Resource_e6xgb"]
+script = ExtResource("10_ji5mu")
+width = 1.4
+height = 4.2
+y = 0.6
+frame = 0.06
+depth = 0.05
+
+[resource]
+script = ExtResource("8_e6xgb")
+id = &"espejo"
+display_name = "ESPEJO"
+stratum = 4
+slot = 1
+wall_color = Color(0.03137255, 0.03137255, 0.039215688, 1)
+floor_color = Color(0.023529412, 0.023529412, 0.03137255, 1)
+accent_color = Color(0.14901961, 0.14901961, 0.16862746, 1)
+trim_color = Color(0.92156863, 0.92156863, 0.9490196, 1)
+light_color = Color(0.9490196, 0.9490196, 1, 1)
+light_energy = 2.2
+light_y = 5.0
+fog_begin = 7.0
+ambient = 0.3
+roughness = 0.08
+metallic = 0.9
+grime_frequency = 0.05
+height = 7.0
+floor_kit = SubResource("Resource_vnm65")
+wall_kit = SubResource("Resource_negil")
+wall_props = Array[ExtResource("2_k6e66")]([SubResource("Resource_e6xgb")])
+ceiling_kit = SubResource("Resource_himra")
+ceiling_props = Array[ExtResource("2_k6e66")]([SubResource("Resource_k6e66"), SubResource("Resource_ikk5k")])
+hideout = SubResource("Resource_yj8q8")
+music = "res://audio/music/estatica.tres"
+music_fx = SubResource("Resource_1itpe")
+threat = 1.2
+entity_speed = 1.1
+scanner_mirror = true

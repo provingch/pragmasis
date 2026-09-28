@@ -82,8 +82,12 @@ class_name WorldDef
 @export var player_speed := 1.0
 ## Multiplies how far the entity sees (catching you hiding).
 @export var visibility := 1.0
+## The player carries a flashlight here (battery, toggled with F).
+@export var flashlight := false
 ## The entity's sounds (stinger, omens, chase music) reach the player.
 @export var entity_audio := true
+## The scanner's maps come out mirrored left/right.
+@export var scanner_mirror := false
 
 ## The kits in build order.
 func kits() -> Array[RoomKit]:
