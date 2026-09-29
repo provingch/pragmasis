@@ -5,7 +5,7 @@ const OPTIONS := preload("res://scenes/ui/Options.tscn")
 ## Debug: PgUp / PgDn jump straight to the previous / next world (with
 ## Shift: a whole stratum), to the centre of the room you're in (walkway in
 ## every world). Off by default: tick it here, or run with
-## `-- --saltar-mundos`. `-- --mundo=<id>` (e.g. --mundo=hueso) starts the
+## `-- --saltar-mundos`. `-- --mundo=<id>` (e.g. --mundo=jaula) starts the
 ## run in that world.
 @export var debug_world_jump := false
 

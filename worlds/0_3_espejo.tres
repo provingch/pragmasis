@@ -1,0 +1,84 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_e3piy"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_45qfn"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Frames.gd" id="3_bk5xc"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="4_d5wek"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="5_8075q"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorLines.gd" id="6_svhe4"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="7_watm7"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="8_wrt7k"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="9_krby0"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallRibs.gd" id="10_1twry"]
+
+[sub_resource type="Resource" id="Resource_e3piy"]
+script = ExtResource("1_e3piy")
+
+[sub_resource type="Resource" id="Resource_45qfn"]
+script = ExtResource("3_bk5xc")
+distances = PackedFloat32Array(1.75, 4.5)
+opening = 3.6
+edge_kind = "trim"
+
+[sub_resource type="Resource" id="Resource_bk5xc"]
+script = ExtResource("4_d5wek")
+size = Vector3(3, 0.06, 0.4)
+
+[sub_resource type="Resource" id="Resource_d5wek"]
+script = ExtResource("5_8075q")
+
+[sub_resource type="Resource" id="Resource_8075q"]
+script = ExtResource("6_svhe4")
+along_x = PackedFloat32Array(0)
+along_z = PackedFloat32Array(0)
+width = 0.05
+height = 0.01
+kind = "trim"
+
+[sub_resource type="Resource" id="Resource_svhe4"]
+script = ExtResource("7_watm7")
+reverb = 0.4
+reverb_room = 0.9
+
+[sub_resource type="Resource" id="Resource_watm7"]
+script = ExtResource("9_krby0")
+
+[sub_resource type="Resource" id="Resource_wrt7k"]
+script = ExtResource("10_1twry")
+spacing = 1.25
+width = 0.3
+depth_min = 0.3
+depth_max = 0.3
+
+[resource]
+script = ExtResource("8_wrt7k")
+id = &"espejo"
+display_name = "ESPEJO"
+code = "U4"
+slot = 3
+wall_color = Color(0.68235296, 0.7058824, 0.7294118, 1)
+floor_color = Color(0.56078434, 0.58431375, 0.60784316, 1)
+accent_color = Color(0.61960787, 0.6431373, 0.6666667, 1)
+trim_color = Color(0.76862746, 0.9254902, 1, 1)
+light_color = Color(0.93333334, 0.95686275, 1, 1)
+fog_color = Color(0.6039216, 0.63529414, 0.6627451, 1)
+light_energy = 3.5
+light_y = 5.8
+fog_begin = 9.0
+fog_height = -0.5
+fog_height_density = 0.3
+ambient = 0.16
+roughness = 0.8
+floor_roughness = 0.05
+grime_frequency = 0.05
+grime = 0.07
+height = 6.0
+floor_kit = SubResource("Resource_d5wek")
+wall_kit = SubResource("Resource_watm7")
+wall_props = Array[ExtResource("2_45qfn")]([SubResource("Resource_wrt7k")])
+ceiling_kit = SubResource("Resource_e3piy")
+ceiling_props = Array[ExtResource("2_45qfn")]([SubResource("Resource_45qfn"), SubResource("Resource_bk5xc")])
+floor_props = Array[ExtResource("2_45qfn")]([SubResource("Resource_8075q")])
+music = "res://audio/music/umbral.tres"
+music_fx = SubResource("Resource_svhe4")
+scanner_mirror = true

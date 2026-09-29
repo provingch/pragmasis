@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_iu5ot"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_ehl6q"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="3_nwl22"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/LightShaft.gd" id="4_3x5iq"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="5_m0eer"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="6_n8fhg"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="7_56kwd"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/HighStairs.gd" id="8_fa4h6"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Layers.gd" id="9_3koc5"]
+
+[sub_resource type="Resource" id="Resource_iu5ot"]
+script = ExtResource("1_iu5ot")
+
+[sub_resource type="Resource" id="Resource_ehl6q"]
+script = ExtResource("3_nwl22")
+size = Vector3(1.2, 0.1, 1.2)
+
+[sub_resource type="Resource" id="Resource_nwl22"]
+script = ExtResource("4_3x5iq")
+size = Vector2(1.6, 1.6)
+at = Vector2(-3.2, 3.2)
+top = 7.0
+bottom = -2.4
+
+[sub_resource type="Resource" id="Resource_3x5iq"]
+script = ExtResource("5_m0eer")
+mode = 1
+depth = 2.4
+lip_kind = "trim"
+
+[sub_resource type="Resource" id="Resource_m0eer"]
+script = ExtResource("7_56kwd")
+
+[sub_resource type="Resource" id="Resource_n8fhg"]
+script = ExtResource("8_fa4h6")
+y_min = 4.4
+rise = 2.6
+
+[sub_resource type="Resource" id="Resource_56kwd"]
+script = ExtResource("9_3koc5")
+count_min = 1
+count_max = 3
+y_min = 5.5
+y_max = 7.5
+depth_min = 0.8
+depth_max = 1.6
+
+[resource]
+script = ExtResource("6_n8fhg")
+id = &"descenso"
+display_name = "DESCENSO"
+code = "U3"
+slot = 2
+wall_color = Color(0.68235296, 0.7058824, 0.7294118, 1)
+floor_color = Color(0.56078434, 0.58431375, 0.60784316, 1)
+accent_color = Color(0.61960787, 0.6431373, 0.6666667, 1)
+trim_color = Color(0.76862746, 0.9254902, 1, 1)
+light_color = Color(0.93333334, 0.95686275, 1, 1)
+fog_color = Color(0.6039216, 0.63529414, 0.6627451, 1)
+light_energy = 6.0
+light_y = 7.8
+fog_begin = 9.0
+fog_height = -0.5
+fog_height_density = 0.3
+spot_angle = 50.0
+ambient = 0.16
+roughness = 0.8
+grime_frequency = 0.05
+grime = 0.07
+height = 8.0
+floor_kit = SubResource("Resource_3x5iq")
+wall_kit = SubResource("Resource_m0eer")
+wall_props = Array[ExtResource("2_ehl6q")]([SubResource("Resource_n8fhg"), SubResource("Resource_56kwd")])
+ceiling_kit = SubResource("Resource_iu5ot")
+ceiling_props = Array[ExtResource("2_ehl6q")]([SubResource("Resource_ehl6q"), SubResource("Resource_nwl22")])
+music = "res://audio/music/umbral.tres"
