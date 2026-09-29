@@ -18,13 +18,13 @@ class_name Platform
 func build(b: RoomBuilder) -> void:
 	var f := b.FREE
 	# The platform: FREE's middle, and the far landing beside it.
-	var x_land := f.position.x + b.LANDING
-	for r: Rect2 in [Rect2(x_land, f.position.y, f.end.x - x_land, f.size.y - 1.0), Rect2(f.position.x, f.position.y, b.LANDING, b.LANDING)]:
+	var x_land := f.position.x + b.FLIGHT
+	var top := Rect2(x_land, f.position.y, f.end.x - x_land, f.size.y - b.FLIGHT)
+	for r: Rect2 in [top, Rect2(f.position.x, f.position.y, b.FLIGHT, b.FLIGHT)]:
 		var c := r.get_center()
 		b.box(Vector3(r.size.x, height - 0.1, r.size.y), Vector3(c.x, (height - 0.1) / 2.0, c.y), kind, true)
 		b.box(Vector3(r.size.x, 0.1, r.size.y), Vector3(c.x, height - 0.05, c.y), top_kind, true)
 	b.free_stairs(0.0, height, stair_kind)
-	var top := Rect2(x_land, f.position.y, f.end.x - x_land, f.size.y - 1.0)
 	var c := top.get_center()
 	if edge_kind != "":
 		b.box(Vector3(0.05, 0.05, top.size.y), Vector3(top.end.x, height, c.y), edge_kind)

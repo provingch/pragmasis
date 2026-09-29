@@ -37,12 +37,10 @@ const HIDE_REACH := 1.3
 const PHASE_PORTAL_SCENE := preload("res://scenes/rooms/PhasePortal.tscn")
 const ANCHOR_SCENE := preload("res://scenes/rooms/Anchor.tscn")
 const GLITCH_SHADER := preload("res://shaders/glitch.gdshader")
-const WATER_SHADER := preload("res://shaders/water.gdshader")
-const STAINED_SHADER := preload("res://shaders/stained.gdshader")
-const SPIN_SHADER := preload("res://shaders/spin.gdshader")
 const BEAM_SHADER := preload("res://shaders/beam.gdshader")
+const BLINK_SHADER := preload("res://shaders/blink.gdshader")
 ## Every material kind a kit may use; each world warms them all up.
-const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch", "water", "glass", "stained", "spin", "beam"]
+const KINDS := ["floor", "wall", "accent", "trim", "edge", "dark", "void", "glitch", "beam", "blink"]
 ## Physics layer of see-through colliders (bars): the player collides with
 ## it, the entity's sight rays (world layer only) pass.
 const SEE_THROUGH_LAYER := 8
@@ -74,6 +72,9 @@ static var _box_shapes := {}
 static var _built := {}
 ## w -> {mesh, colliders}: the world's hideout, added to rooms that have one.
 static var _hideouts := {}
+## "w:target" -> mesh: ORIENTACIÓN's floor line from the centre to a door
+## or a portal corner.
+static var _guides := {}
 
 var _mesh: MeshInstance3D
 var _fixture: MeshInstance3D
@@ -119,6 +120,10 @@ func _ready() -> void:
 		set_process(false)
 	if has_anchor:
 		add_child(ANCHOR_SCENE.instantiate())
+	if _def.guide_lines:
+		var to := RoomGenerator.guide(RoomGenerator.cell_of(position), w)
+		if to != Vector2.ZERO:
+			_instance(guide_mesh(w, to))
 	if link_target >= 0:
 		var corner := (ROOM_SIZE / 2.0 - PORTAL_INSET) * (1.0 if link_target > w else -1.0)
 		var portal := PHASE_PORTAL_SCENE.instantiate() as PhasePortal
@@ -242,6 +247,21 @@ static func geometry(lw: int, room_exits: Array[bool], v: int) -> Dictionary:
 		_built[key] = b.bake()
 	return _built[key]
 
+## A laser line on the floor from the room's centre to `to` (room x/z),
+## ending in an arrowhead.
+static func guide_mesh(lw: int, to: Vector2) -> ArrayMesh:
+	var key := "%d:%s" % [lw, to]
+	if not _guides.has(key):
+		var yaw := atan2(-to.y, to.x) # about +y: +x toward `to`
+		var turn := Basis(Vector3.UP, yaw)
+		var length := to.length() - 0.3
+		var line: Array = [[Vector3(length, 0.02, 0.05), turn * Vector3(length / 2.0, 0.012, 0), turn]]
+		for s: float in [-1.0, 1.0]:
+			var head := Basis(Vector3.UP, yaw + s * 2.5)
+			line.append([Vector3(0.5, 0.02, 0.05), turn * Vector3(length, 0.012, 0) + head * Vector3(0.25, 0, 0), head])
+		_guides[key] = RoomBuilder.commit({"edge": line}, lw, true)
+	return _guides[key]
+
 static func hideout_geometry(lw: int) -> Dictionary:
 	if not _hideouts.has(lw):
 		var b := RoomBuilder.new(lw, [false, false, false, false], 0)
@@ -267,7 +287,7 @@ static func warm_steps(lw: int) -> Array[Callable]:
 static func clear_caches() -> void:
 	for task: int in _grime_tasks.values():
 		WorkerThreadPool.wait_for_task_completion(task)
-	for cache: Dictionary in [_materials, _grime, _grime_tasks, _box_shapes, _built, _hideouts]:
+	for cache: Dictionary in [_materials, _grime, _grime_tasks, _box_shapes, _built, _hideouts, _guides]:
 		cache.clear()
 
 static func unit_cube() -> Array:
@@ -298,39 +318,27 @@ static func layer_material(lw: int, kind: String) -> Material:
 			sm.shader = GLITCH_SHADER
 			sm.set_shader_parameter("albedo", s.accent_color)
 			sm.set_shader_parameter("emission", s.trim_color)
+			sm.set_shader_parameter("emission_energy", 0.12)
 			mat = sm
-		"water":
+		"blink": # lines of light that drop out and spike
 			var sm := ShaderMaterial.new()
-			sm.shader = WATER_SHADER
-			sm.set_shader_parameter("albedo", s.water_color)
-			mat = sm
-		"stained", "spin":
-			var sm := ShaderMaterial.new()
-			sm.shader = STAINED_SHADER if kind == "stained" else SPIN_SHADER
-			sm.set_shader_parameter("albedo", s.accent_color)
+			sm.shader = BLINK_SHADER
 			sm.set_shader_parameter("emission", s.trim_color)
-			mat = sm
-		"glass": # amber, ice: lit from within, faintly
-			var sm := StandardMaterial3D.new()
-			sm.albedo_color = s.trim_color.darkened(0.4)
-			sm.emission_enabled = true
-			sm.emission = s.trim_color
-			sm.emission_energy_multiplier = 0.35
-			sm.roughness = 0.2
+			sm.set_shader_parameter("emission2", s.light_color)
 			mat = sm
 		"beam": # a shaft of light: additive, fading toward its silhouette
 			var sm := ShaderMaterial.new()
 			sm.shader = BEAM_SHADER
 			sm.set_shader_parameter("color", s.light_color)
 			mat = sm
-		"trim", "edge", "grate":
+		"trim", "edge":
 			var sm := StandardMaterial3D.new()
-			sm.albedo_color = Color.BLACK if kind == "grate" else s.trim_color
+			sm.albedo_color = s.trim_color
 			sm.emission_enabled = true
 			sm.emission = s.trim_color
 			# Trim low enough that the tonemapper keeps the hue instead of
 			# clipping to white; edges are the only light ESTÁTICA has.
-			sm.emission_energy_multiplier = {"trim": 1.1, "edge": 2.2, "grate": 0.3}[kind]
+			sm.emission_energy_multiplier = {"trim": 1.1, "edge": 2.2}[kind]
 			mat = sm
 		"dark", "void":
 			var sm := StandardMaterial3D.new()

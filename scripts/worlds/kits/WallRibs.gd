@@ -3,7 +3,8 @@ class_name WallRibs
 
 ## Vertical ribs standing out of the walls at a regular spacing, clear of
 ## door jambs and the hideout corner. Solid. With jitter they wander off
-## the grid and vary in width and depth: roots, not ribs.
+## the grid and vary in width and depth: roots, not ribs. None in FREE
+## (its stairs run along the walls).
 
 @export var spacing := 1.0
 @export var width := 0.22
@@ -30,5 +31,5 @@ func build(b: RoomBuilder) -> void:
 				wd *= 1.0 + b.rng.randf_range(-0.5, 0.5) * jitter
 				d = b.rng.randf_range(depth_min, depth_max)
 			var at := b.at(seg, a, b.WALL_THICKNESS / 2.0 + d / 2.0, h / 2.0)
-			if a > seg.from + 0.3 and a < seg.to - 0.3 and not b.reserved(at):
+			if a > seg.from + 0.3 and a < seg.to - 0.3 and not b.reserved(at) and not b.in_free(at):
 				b.box(b.sized(seg, wd, h, d), at, kind, true)

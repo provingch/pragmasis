@@ -1,0 +1,89 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_e4e2l"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_vbgja"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/LightShaft.gd" id="3_cr1sg"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="4_3031a"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Platform.gd" id="5_cj6d5"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="6_2opcf"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="7_j2ysn"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="8_4i6ud"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallJambEdges.gd" id="9_hvo2d"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="10_0rw2y"]
+
+[sub_resource type="Resource" id="Resource_e4e2l"]
+script = ExtResource("1_e4e2l")
+
+[sub_resource type="Resource" id="Resource_vbgja"]
+script = ExtResource("3_cr1sg")
+size = Vector2(0.9, 0.9)
+at = Vector2(-2.6, 2.4)
+bottom = 1.6
+core_kind = "edge"
+
+[sub_resource type="Resource" id="Resource_cr1sg"]
+script = ExtResource("4_3031a")
+
+[sub_resource type="Resource" id="Resource_3031a"]
+script = ExtResource("5_cj6d5")
+height = 1.6
+edge_kind = "edge"
+
+[sub_resource type="Resource" id="Resource_cj6d5"]
+script = ExtResource("6_2opcf")
+reverb = 0.25
+
+[sub_resource type="Resource" id="Resource_2opcf"]
+script = ExtResource("8_4i6ud")
+
+[sub_resource type="Resource" id="Resource_j2ysn"]
+script = ExtResource("9_hvo2d")
+
+[sub_resource type="Resource" id="Resource_4i6ud"]
+script = ExtResource("10_0rw2y")
+y = 0.02
+height = 0.03
+depth = 0.03
+kind = "edge"
+
+[sub_resource type="Resource" id="Resource_hvo2d"]
+script = ExtResource("10_0rw2y")
+y = 0.02
+height = 0.03
+depth = 0.03
+kind = "edge"
+from_ceiling = true
+
+[resource]
+script = ExtResource("7_j2ysn")
+id = &"orientacion"
+display_name = "ORIENTACIÓN"
+code = "X4"
+stratum = 4
+slot = 3
+wall_color = Color(0.0627451, 0.0627451, 0.078431375, 1)
+floor_color = Color(0.03529412, 0.03529412, 0.047058824, 1)
+accent_color = Color(0.08627451, 0.08627451, 0.10980392, 1)
+trim_color = Color(0.20392157, 1, 0.41568628, 1)
+light_color = Color(0.27450982, 1, 0.5019608, 1)
+fog_color = Color(0.007843138, 0.007843138, 0.011764706, 1)
+light_energy = 2.2
+light_y = 6.6
+fog_begin = 6.0
+ambient = 0.03
+roughness = 0.45
+floor_roughness = 0.18
+grime_frequency = 0.1
+grime = 0.05
+height = 7.0
+floor_kit = SubResource("Resource_cr1sg")
+wall_kit = SubResource("Resource_2opcf")
+wall_props = Array[ExtResource("2_vbgja")]([SubResource("Resource_j2ysn"), SubResource("Resource_4i6ud"), SubResource("Resource_hvo2d")])
+ceiling_kit = SubResource("Resource_e4e2l")
+ceiling_props = Array[ExtResource("2_vbgja")]([SubResource("Resource_vbgja")])
+floor_props = Array[ExtResource("2_vbgja")]([SubResource("Resource_3031a")])
+music = "res://audio/music/estatica.tres"
+music_fx = SubResource("Resource_cj6d5")
+threat = 0.8
+entity_speed = 0.9
+guide_lines = true

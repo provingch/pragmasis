@@ -15,7 +15,7 @@ class_name FloorZones
 @export var size_max := 3.0
 ## Height of the patch's surface.
 @export var top := 0.03
-@export var kind := "water"
+@export var kind := "accent"
 ## Border around each patch ("" = none).
 @export var rim_kind := ""
 @export var rim := 0.15

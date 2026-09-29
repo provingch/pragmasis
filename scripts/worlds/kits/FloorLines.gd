@@ -10,7 +10,7 @@ class_name FloorLines
 @export var along_z: PackedFloat32Array = []
 @export var width := 0.6
 @export var height := 0.02
-@export var kind := "grate"
+@export var kind := "trim"
 @export var from_ceiling := false
 ## Centre height (-1: on the floor, or under the ceiling): beams mid-air.
 @export var at_y := -1.0

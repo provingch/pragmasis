@@ -28,8 +28,6 @@ class_name WorldDef
 @export var trim_color := Color.WHITE
 @export var light_color := Color.WHITE
 @export var fog_color := Color.BLACK
-## Surface of the "water" kind.
-@export var water_color := Color(0.1, 0.18, 0.2)
 
 @export_group("Luz y niebla")
 @export var light_energy := 1.6
@@ -98,6 +96,11 @@ class_name WorldDef
 @export var entity_audio := true
 ## The scanner's maps come out mirrored left/right.
 @export var scanner_mirror := false
+## Static over the scanner (0 = clean, 1 = the maps keep breaking up).
+@export_range(0.0, 1.0) var scanner_noise := 0.0
+## Laser lines on the floor point each room's way to the nearest portal
+## or fissure.
+@export var guide_lines := false
 ## Multiplies the fissures leading deeper (the shallower ones stay as
 ## they are): 2 = twice as many ways down.
 @export var deep_fissures := 1.0

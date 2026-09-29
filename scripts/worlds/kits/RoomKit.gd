@@ -10,6 +10,6 @@ class_name RoomKit
 ## the portal corners (+x +z, -x -z) or the hideout corner (b.reserved()).
 
 ## Material kinds kits use (see Room.layer_material): floor, wall, accent,
-## trim, edge, grate, dark, void, glitch.
+## trim, edge, dark, void, glitch, beam, blink.
 func build(_b: RoomBuilder) -> void:
 	pass

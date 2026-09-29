@@ -34,9 +34,9 @@ const PADS: Array[Rect2] = [Rect2(WALK_HALF, WALK_HALF, INNER - WALK_HALF, INNER
 ## What may rise or sink: the free quadrant and the strip by the hideout.
 const FREE := Rect2(-INNER, WALK_HALF, INNER - WALK_HALF, INNER - WALK_HALF)
 const STRIP := Rect2(WALK_HALF, -2.6, INNER - WALK_HALF, 2.6 - WALK_HALF)
-## Stairs: steepest rise per metre of run (35 degrees; CharacterBody3D
+## Stairs: steepest rise per metre of run (39 degrees; CharacterBody3D
 ## climbs up to 45) and the height of each visual step.
-const MAX_SLOPE := 0.7
+const MAX_SLOPE := 0.8
 const STEP_RISE := 0.22
 
 var world: WorldDef
@@ -125,23 +125,24 @@ func stair(a: Vector3, b: Vector3, width: float, kind: String, base_y := 0.0) ->
 ## (a pit floor or a platform, which the caller builds). Every flight ends
 ## on something flat: stairs can't be walked onto from the side. Up to
 ## ~2.4 m either way. Adds its validation route.
-const LANDING := 0.9
+## Width of every flight and landing (the player is 0.8 m across).
+const FLIGHT := 1.1
 func free_stairs(y_walk: float, y_far: float, kind: String) -> void:
 	var f := FREE
-	var x_land := f.position.x + LANDING # east edge of both landings
-	var z1 := f.end.y - 1.0 / 2.0 # first flight's middle line (1 m wide)
-	var z_turn := f.end.y - 1.0 # where the second flight leaves the corner
-	var z_end := f.position.y + LANDING
-	var x2 := f.position.x + LANDING / 2.0
+	var x_land := f.position.x + FLIGHT # east edge of both landings
+	var z1 := f.end.y - FLIGHT / 2.0 # first flight's middle line
+	var z_turn := f.end.y - FLIGHT # where the second flight leaves the corner
+	var z_end := f.position.y + FLIGHT
+	var x2 := f.position.x + FLIGHT / 2.0
 	var run1 := f.end.x - x_land
 	var run2 := z_turn - z_end
 	var y_mid := y_walk + (y_far - y_walk) * run1 / (run1 + run2)
 	var base := minf(y_walk, y_far)
-	stair(Vector3(f.end.x, y_walk, z1), Vector3(x_land, y_mid, z1), 1.0, kind, base)
+	stair(Vector3(f.end.x, y_walk, z1), Vector3(x_land, y_mid, z1), FLIGHT, kind, base)
 	var h := y_mid - base
-	box(Vector3(LANDING, h, 1.0), Vector3(x2, base + h / 2.0, z1), kind, true)
-	stair(Vector3(x2, y_mid, z_turn), Vector3(x2, y_far, z_end), LANDING, kind, base)
-	route([Vector3(-0.8, 0, z1), Vector3(f.end.x - 0.3, NAN, z1), Vector3(x2, y_mid, z1), Vector3(x2, NAN, (z_turn + z_end) / 2.0), Vector3(x2, y_far, z_end - 0.4), Vector3(f.get_center().x, y_far, f.position.y + 0.7)])
+	box(Vector3(FLIGHT, h, FLIGHT), Vector3(x2, base + h / 2.0, z1), kind, true)
+	stair(Vector3(x2, y_mid, z_turn), Vector3(x2, y_far, z_end), FLIGHT, kind, base)
+	route([Vector3(-0.8, 0, z1), Vector3(f.end.x - 0.3, NAN, z1), Vector3(x2, y_mid, z1), Vector3(x2, NAN, (z_turn + z_end) / 2.0), Vector3(x2, y_far, z_end - 0.5), Vector3(f.get_center().x, y_far, f.position.y + 0.7)])
 
 ## A validation walk (room coordinates; y = NAN: on a ramp, not checked).
 func route(points: Array[Vector3]) -> void:
@@ -209,6 +210,11 @@ func strip(seg: Dictionary, y: float, h: float, depth: float, kind: String) -> v
 ## The hideout corner, kept clear in every room.
 func reserved(p: Vector3) -> bool:
 	return p.x > 3.0 and p.z < -3.0
+
+## In (or within `margin` of) FREE, where stairs hug the walls: no solid
+## wall props there.
+func in_free(p: Vector3, margin := 0.5) -> bool:
+	return FREE.grow(margin).has_point(Vector2(p.x, p.z))
 
 ## True if a solid footprint (centre, size; y ignored) stays inside the
 ## room and out of the walkway plus, the portal corners and the hideout

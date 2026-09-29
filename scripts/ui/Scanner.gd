@@ -345,7 +345,14 @@ func _draw_sweep() -> void:
 			draw_line(Vector2(xi, HEADER_H + 1), Vector2(xi, DEVICE.y - FOOTER_H - 1), Color(FG, 0.35 / (i + 1)), 1.0)
 
 func _draw_degradation() -> void:
-	if _omen():
+	# A noisy world: the maps keep breaking up into static for a moment.
+	var noise := Worlds.def(DimensionState.player_w).scanner_noise
+	if noise > 0.0 and fmod(_t + sin(_t * 0.7), 1.6) < 0.45 * noise:
+		var area := Rect2(SIDE_W + 1, HEADER_H + 1, DEVICE.x - SIDE_W - 2, DEVICE.y - HEADER_H - FOOTER_H - 2)
+		draw_rect(area, Color(BG, 0.9))
+		for i in 30:
+			draw_rect(Rect2(area.position + Vector2(randf() * area.size.x, randf() * area.size.y), Vector2(randf_range(4, 60), randf_range(1, 3))), Color(FG, randf_range(0.1, 0.5)))
+	if _omen() or randf() < noise * 0.3:
 		# Something is folding in: bands of static.
 		for i in 10:
 			var band := Rect2(0, randf() * DEVICE.y, DEVICE.x, randf_range(1.0, 5.0))

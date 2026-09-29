@@ -1,55 +1,64 @@
-[gd_resource type="Resource" script_class="WorldDef" load_steps=15 format=3]
+[gd_resource type="Resource" script_class="WorldDef" load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_udtea"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_hd1h4"]
-[ext_resource type="Script" path="res://scripts/worlds/kits/FloorSlab.gd" id="3_i2ftp"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="3_trwyn"]
 [ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="5_7lc4p"]
 [ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="6_y31vn"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="7_ky2fb"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/WallJambEdges.gd" id="8_nbj7i"]
 
-[sub_resource type="Resource" id="Resource_udtea"]
+[sub_resource type="Resource" id="Resource_trwyn"]
 script = ExtResource("1_udtea")
 
+[sub_resource type="Resource" id="Resource_udtea"]
+script = ExtResource("3_trwyn")
+mode = 1
+depth = 2.2
+
 [sub_resource type="Resource" id="Resource_hd1h4"]
-script = ExtResource("3_i2ftp")
-
-[sub_resource type="Resource" id="Resource_kfc7p"]
 script = ExtResource("5_7lc4p")
-lowpass_hz = 800.0
-reverb = 0.6
+lowpass_hz = 1200.0
+reverb = 0.5
 reverb_room = 1.0
-pitch = 0.85
-volume_db = -4.0
 
-[sub_resource type="Resource" id="Resource_7lc4p"]
+[sub_resource type="Resource" id="Resource_i2ftp"]
 script = ExtResource("7_ky2fb")
 
-[sub_resource type="Resource" id="Resource_y31vn"]
+[sub_resource type="Resource" id="Resource_kfc7p"]
 script = ExtResource("8_nbj7i")
-kind = "grate"
+width = 0.035
 
 [resource]
 script = ExtResource("6_y31vn")
 id = &"vacio"
 display_name = "VACÍO"
+code = "X3"
 stratum = 4
 slot = 2
-wall_color = Color(0.54901963, 0.54901963, 0.5803922, 1)
-floor_color = Color(0.36078432, 0.36078432, 0.38039216, 1)
-accent_color = Color(0.4509804, 0.4509804, 0.47058824, 1)
-trim_color = Color(0.6, 0.627451, 0.7019608, 1)
-light_color = Color(0.6, 0.6, 0.6509804, 1)
+wall_color = Color(0.0627451, 0.0627451, 0.078431375, 1)
+floor_color = Color(0.03529412, 0.03529412, 0.047058824, 1)
+accent_color = Color(0.08627451, 0.08627451, 0.10980392, 1)
+trim_color = Color(0.9490196, 0.95686275, 1, 1)
+light_color = Color(0.62352943, 0.6901961, 1, 1)
+fog_color = Color(0.007843138, 0.007843138, 0.011764706, 1)
+light_energy = 2.0
+light_y = 5.0
+flicker = "glitch"
 fog_begin = 4.0
-ambient = 0.02
+ambient = 0.03
 light_chance = 0.0
-height = 5.0
-floor_kit = SubResource("Resource_hd1h4")
-wall_kit = SubResource("Resource_7lc4p")
-wall_props = Array[ExtResource("2_hd1h4")]([SubResource("Resource_y31vn")])
-ceiling_kit = SubResource("Resource_udtea")
+roughness = 0.45
+floor_roughness = 0.18
+grime_frequency = 0.1
+grime = 0.05
+height = 6.0
+floor_kit = SubResource("Resource_udtea")
+wall_kit = SubResource("Resource_i2ftp")
+wall_props = Array[ExtResource("2_hd1h4")]([SubResource("Resource_kfc7p")])
+ceiling_kit = SubResource("Resource_trwyn")
 music = "res://audio/music/vacio.tres"
-music_fx = SubResource("Resource_kfc7p")
+music_fx = SubResource("Resource_hd1h4")
 threat = 1.4
 visibility = 0.6
 flashlight = true

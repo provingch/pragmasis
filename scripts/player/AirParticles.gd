@@ -51,6 +51,6 @@ func _apply(w: int) -> void:
 		"sparks": def.trim_color * 2.0,
 		"snow": def.light_color.lightened(0.5),
 		"dust": def.light_color * 0.7,
-		"drips": def.water_color.lightened(0.5),
+		"drips": def.light_color.lightened(0.3),
 	}[def.air]
 	restart()

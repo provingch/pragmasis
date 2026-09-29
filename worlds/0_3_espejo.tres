@@ -33,7 +33,6 @@ along_x = PackedFloat32Array(0)
 along_z = PackedFloat32Array(0)
 width = 0.05
 height = 0.01
-kind = "trim"
 
 [sub_resource type="Resource" id="Resource_svhe4"]
 script = ExtResource("7_watm7")

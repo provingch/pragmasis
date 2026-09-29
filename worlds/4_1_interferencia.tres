@@ -1,0 +1,98 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_0t4oh"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_40snt"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Frames.gd" id="3_tthot"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="4_oxcjb"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="5_hrn15"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="6_qmvwg"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="7_e1sxq"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallJambEdges.gd" id="8_kytvq"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="9_ocb4t"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallPanels.gd" id="10_yq02r"]
+
+[sub_resource type="Resource" id="Resource_0t4oh"]
+script = ExtResource("1_0t4oh")
+
+[sub_resource type="Resource" id="Resource_40snt"]
+script = ExtResource("3_tthot")
+distances = PackedFloat32Array(1.75)
+post = 0.05
+opening = 3.6
+lintel = 0.05
+kind = "blink"
+
+[sub_resource type="Resource" id="Resource_tthot"]
+script = ExtResource("4_oxcjb")
+mode = 1
+depth = 1.8
+lip_kind = "blink"
+
+[sub_resource type="Resource" id="Resource_oxcjb"]
+script = ExtResource("5_hrn15")
+highpass_hz = 200.0
+distortion = 0.35
+
+[sub_resource type="Resource" id="Resource_hrn15"]
+script = ExtResource("7_e1sxq")
+
+[sub_resource type="Resource" id="Resource_qmvwg"]
+script = ExtResource("8_kytvq")
+kind = "blink"
+
+[sub_resource type="Resource" id="Resource_e1sxq"]
+script = ExtResource("9_ocb4t")
+y = 0.02
+height = 0.03
+depth = 0.03
+kind = "blink"
+
+[sub_resource type="Resource" id="Resource_kytvq"]
+script = ExtResource("9_ocb4t")
+y = 0.02
+height = 0.03
+depth = 0.03
+kind = "blink"
+from_ceiling = true
+
+[sub_resource type="Resource" id="Resource_ocb4t"]
+script = ExtResource("10_yq02r")
+count_min = 5
+count_max = 9
+length_min = 0.6
+length_max = 3.0
+height_min = 0.03
+height_max = 0.06
+kind = "blink"
+
+[resource]
+script = ExtResource("6_qmvwg")
+id = &"interferencia"
+display_name = "INTERFERENCIA"
+code = "X2"
+stratum = 4
+slot = 1
+wall_color = Color(0.0627451, 0.0627451, 0.078431375, 1)
+floor_color = Color(0.03529412, 0.03529412, 0.047058824, 1)
+accent_color = Color(0.08627451, 0.08627451, 0.10980392, 1)
+trim_color = Color(0.2509804, 1, 0.9019608, 1)
+light_color = Color(0.3137255, 1, 0.47058824, 1)
+fog_color = Color(0.007843138, 0.007843138, 0.011764706, 1)
+light_y = 5.6
+flicker = "glitch"
+fog_begin = 6.0
+ambient = 0.03
+air = "sparks"
+roughness = 0.45
+floor_roughness = 0.18
+grime_frequency = 0.1
+grime = 0.05
+height = 6.0
+floor_kit = SubResource("Resource_tthot")
+wall_kit = SubResource("Resource_hrn15")
+wall_props = Array[ExtResource("2_40snt")]([SubResource("Resource_qmvwg"), SubResource("Resource_e1sxq"), SubResource("Resource_kytvq"), SubResource("Resource_ocb4t")])
+ceiling_kit = SubResource("Resource_0t4oh")
+ceiling_props = Array[ExtResource("2_40snt")]([SubResource("Resource_40snt")])
+music = "res://audio/music/estatica.tres"
+music_fx = SubResource("Resource_oxcjb")
+scanner_noise = 0.8

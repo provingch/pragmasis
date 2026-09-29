@@ -1,0 +1,105 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=23 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_dytf5"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_t44ur"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloatingBlocks.gd" id="3_2kojd"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="4_wqy4x"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="5_3bwek"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Platform.gd" id="6_82mqn"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="7_vo8fs"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="8_2ww4m"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="9_o67wd"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallJambEdges.gd" id="10_jyrij"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="11_6repl"]
+
+[sub_resource type="Resource" id="Resource_dytf5"]
+script = ExtResource("1_dytf5")
+
+[sub_resource type="Resource" id="Resource_t44ur"]
+script = ExtResource("3_2kojd")
+count_min = 4
+count_max = 7
+size_max = 1.6
+y_min = 3.2
+y_max = 6.5
+spread = 4.0
+
+[sub_resource type="Resource" id="Resource_2kojd"]
+script = ExtResource("3_2kojd")
+count_min = 3
+count_max = 6
+size_min = 0.1
+size_max = 0.3
+y_min = 3.0
+y_max = 6.5
+spread = 4.2
+kind = "edge"
+
+[sub_resource type="Resource" id="Resource_wqy4x"]
+script = ExtResource("4_wqy4x")
+size = Vector3(1.8, 0.04, 0.04)
+
+[sub_resource type="Resource" id="Resource_3bwek"]
+script = ExtResource("5_3bwek")
+
+[sub_resource type="Resource" id="Resource_82mqn"]
+script = ExtResource("6_82mqn")
+height = 1.2
+edge_kind = "edge"
+
+[sub_resource type="Resource" id="Resource_vo8fs"]
+script = ExtResource("7_vo8fs")
+highpass_hz = 150.0
+reverb = 0.35
+
+[sub_resource type="Resource" id="Resource_2ww4m"]
+script = ExtResource("9_o67wd")
+
+[sub_resource type="Resource" id="Resource_o67wd"]
+script = ExtResource("10_jyrij")
+
+[sub_resource type="Resource" id="Resource_jyrij"]
+script = ExtResource("11_6repl")
+y = 0.02
+height = 0.03
+depth = 0.03
+kind = "edge"
+
+[sub_resource type="Resource" id="Resource_6repl"]
+script = ExtResource("11_6repl")
+y = 0.02
+height = 0.03
+depth = 0.03
+kind = "edge"
+from_ceiling = true
+
+[resource]
+script = ExtResource("8_2ww4m")
+id = &"fragmento"
+display_name = "FRAGMENTO"
+code = "X1"
+stratum = 4
+wall_color = Color(0.0627451, 0.0627451, 0.078431375, 1)
+floor_color = Color(0.03529412, 0.03529412, 0.047058824, 1)
+accent_color = Color(0.08627451, 0.08627451, 0.10980392, 1)
+trim_color = Color(0.22745098, 0.4862745, 1, 1)
+light_color = Color(0.2901961, 0.47058824, 1, 1)
+fog_color = Color(0.007843138, 0.007843138, 0.011764706, 1)
+light_energy = 2.5
+light_y = 6.4
+flicker = "glitch"
+fog_begin = 6.0
+ambient = 0.03
+roughness = 0.45
+floor_roughness = 0.18
+grime_frequency = 0.1
+grime = 0.05
+height = 7.0
+floor_kit = SubResource("Resource_3bwek")
+wall_kit = SubResource("Resource_2ww4m")
+wall_props = Array[ExtResource("2_t44ur")]([SubResource("Resource_o67wd"), SubResource("Resource_jyrij"), SubResource("Resource_6repl")])
+ceiling_kit = SubResource("Resource_dytf5")
+ceiling_props = Array[ExtResource("2_t44ur")]([SubResource("Resource_t44ur"), SubResource("Resource_2kojd"), SubResource("Resource_wqy4x")])
+floor_props = Array[ExtResource("2_t44ur")]([SubResource("Resource_82mqn")])
+music = "res://audio/music/estatica.tres"
+music_fx = SubResource("Resource_vo8fs")

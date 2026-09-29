@@ -73,6 +73,7 @@ var _pending: Array[Vector2i] = [] # cells waiting to be built, nearest first
 var _warm_steps := {} # world id -> Array[Callable] still to run
 var _warm_order: Array[int] = [] # worlds with steps left, next first
 var _warm_queued := {} # world id -> true
+var _guides := {} # Vector3i(x, z, w) -> Vector2 (see guide)
 
 func init_world(parent: Node3D, player: Node3D, start_w: int) -> void:
 	_clear_rooms()
@@ -100,6 +101,7 @@ func regenerate() -> void:
 
 func _reseed() -> void:
 	world_seed = randi()
+	_guides.clear()
 	_center = cell_of(_player.global_position)
 	anchor_w = -1
 	if GameManager.mode.anchors:
@@ -279,6 +281,43 @@ func link_of(x: int, z: int, w: int) -> Vector2i:
 		if t < 0:
 			t = Worlds.portal_target(w, -dir)
 	return Vector2i(t, 0) if t >= 0 else NO_LINK
+
+## Where a room's guide line points (WorldDef.guide_lines), in room x/z:
+## its portal corner if it has one, else the door toward the nearest one
+## (maze BFS, GUIDE_RADIUS rooms out). ZERO: none in reach.
+const GUIDE_RADIUS := 10
+func guide(cell: Vector2i, w: int) -> Vector2:
+	var key := Vector3i(cell.x, cell.y, w)
+	if _guides.has(key):
+		return _guides[key]
+	var out := Vector2.ZERO
+	var link := link_of(cell.x, cell.y, w)
+	if link.x >= 0:
+		out = Vector2.ONE * (Room.ROOM_SIZE / 2.0 - Room.PORTAL_INSET) * (1.0 if link.x > w else -1.0)
+	else:
+		var steps: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1), Vector2i(1, 0), Vector2i(-1, 0)]
+		var first := {} # cell -> the step out of `cell` it's reached through
+		var queue: Array[Vector2i] = []
+		var open := exits_for(cell.x, cell.y)
+		for i in 4:
+			if open[i]:
+				first[cell + steps[i]] = steps[i]
+				queue.append(cell + steps[i])
+		while not queue.is_empty():
+			var c: Vector2i = queue.pop_front()
+			if link_of(c.x, c.y, w).x >= 0:
+				out = Vector2(first[c]) * (Room.ROOM_SIZE / 2.0)
+				break
+			if maxi(absi(c.x - cell.x), absi(c.y - cell.y)) >= GUIDE_RADIUS:
+				continue
+			open = exits_for(c.x, c.y)
+			for i in 4:
+				var n: Vector2i = c + steps[i]
+				if open[i] and n != cell and not first.has(n):
+					first[n] = first[c]
+					queue.append(n)
+	_guides[key] = out
+	return out
 
 ## One cell per BEACON_BLOCK-square block, picked by hash.
 func is_beacon(x: int, z: int) -> bool:
