@@ -6,7 +6,6 @@
 [ext_resource type="Script" path="res://scripts/worlds/kits/FloorSlab.gd" id="4_vohts"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/FloorLines.gd" id="5_3ibbv"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/FloatingBlocks.gd" id="6_77gjg"]
-[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="7_0n42v"]
 [ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="8_7vao6"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="9_72k3m"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="10_8gguo"]
@@ -34,12 +33,6 @@ kind = "edge"
 
 [sub_resource type="Resource" id="Resource_2t70h"]
 script = ExtResource("6_77gjg")
-
-[sub_resource type="Resource" id="Resource_gtosa"]
-script = ExtResource("7_0n42v")
-body_kind = "void"
-front_kind = "void"
-dressing = 5
 
 [sub_resource type="Resource" id="Resource_6yac6"]
 script = ExtResource("9_72k3m")
@@ -89,7 +82,6 @@ wall_props = Array[ExtResource("2_k00bn")]([SubResource("Resource_1qktq"), SubRe
 ceiling_kit = SubResource("Resource_30ko4")
 ceiling_props = Array[ExtResource("2_k00bn")]([SubResource("Resource_jfciw")])
 floor_props = Array[ExtResource("2_k00bn")]([SubResource("Resource_yrkxp"), SubResource("Resource_2t70h")])
-hideout = SubResource("Resource_gtosa")
 music = "res://audio/music/estatica.tres"
 threat = 0.6
 entity_speed = 1.25

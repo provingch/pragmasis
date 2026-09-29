@@ -3,7 +3,6 @@
 [ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_udtea"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_hd1h4"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/FloorSlab.gd" id="3_i2ftp"]
-[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="4_kfc7p"]
 [ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="5_7lc4p"]
 [ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="6_y31vn"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="7_ky2fb"]
@@ -14,10 +13,6 @@ script = ExtResource("1_udtea")
 
 [sub_resource type="Resource" id="Resource_hd1h4"]
 script = ExtResource("3_i2ftp")
-
-[sub_resource type="Resource" id="Resource_i2ftp"]
-script = ExtResource("4_kfc7p")
-dressing = 5
 
 [sub_resource type="Resource" id="Resource_kfc7p"]
 script = ExtResource("5_7lc4p")
@@ -53,7 +48,6 @@ floor_kit = SubResource("Resource_hd1h4")
 wall_kit = SubResource("Resource_7lc4p")
 wall_props = Array[ExtResource("2_hd1h4")]([SubResource("Resource_y31vn")])
 ceiling_kit = SubResource("Resource_udtea")
-hideout = SubResource("Resource_i2ftp")
 music = "res://audio/music/vacio.tres"
 music_fx = SubResource("Resource_kfc7p")
 threat = 1.4

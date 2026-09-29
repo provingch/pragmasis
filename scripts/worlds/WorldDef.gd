@@ -72,7 +72,6 @@ class_name WorldDef
 @export var floor_props: Array[RoomKit] = []
 ## Scales how many random props kits place (1 = as authored).
 @export var prop_density := 1.0
-@export var hideout: HideoutKit
 
 @export_group("Música")
 ## A MusicTrack (.tres): stream + loop point. Several worlds may share one.

@@ -39,10 +39,9 @@ func _draw() -> void:
 			_stripes(10.0, Color(MenuStyle.ACCENT, 0.9), Color(0.067, 0.067, 0.067, 0.9))
 		Kind.HAZARD_SMALL:
 			_stripes(8.0, Color(MenuStyle.ACCENT, 0.75), Color.TRANSPARENT)
-		Kind.LOGO:
+		Kind.LOGO: # the PRAGMASIS triangle (as on every hideout's door)
 			var c := Color(1, 1, 1, 0.6)
-			draw_rect(Rect2(1, 1, 18, 18), c, false, 1.6)
-			draw_line(Vector2(1, 19), Vector2(19, 1), c, 1.6)
+			draw_polyline(PackedVector2Array([Vector2(10, 1.5), Vector2(19, 17.5), Vector2(1, 17.5), Vector2(10, 1.5)]), c, 1.6)
 		Kind.TESSERACT:
 			_tesseract()
 		Kind.DOT:

@@ -6,7 +6,6 @@
 [ext_resource type="Script" path="res://scripts/worlds/kits/FloorSlab.gd" id="4_ncaks"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/FloorLines.gd" id="5_b84yn"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/FloatingFrames.gd" id="6_bwpjs"]
-[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="7_363rm"]
 [ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="8_3hlls"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="9_q2fve"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="10_ehqy3"]
@@ -37,12 +36,6 @@ script = ExtResource("6_bwpjs")
 sizes = PackedFloat32Array(4.4, 2.4)
 y = 6.2
 bar = 0.09
-
-[sub_resource type="Resource" id="Resource_bwpjs"]
-script = ExtResource("7_363rm")
-body_kind = "void"
-front_kind = "void"
-dressing = 5
 
 [sub_resource type="Resource" id="Resource_363rm"]
 script = ExtResource("9_q2fve")
@@ -83,7 +76,6 @@ wall_props = Array[ExtResource("2_loakm")]([SubResource("Resource_3hlls"), SubRe
 ceiling_kit = SubResource("Resource_6bx81")
 ceiling_props = Array[ExtResource("2_loakm")]([SubResource("Resource_loakm")])
 floor_props = Array[ExtResource("2_loakm")]([SubResource("Resource_ncaks"), SubResource("Resource_b84yn")])
-hideout = SubResource("Resource_bwpjs")
 music = "res://audio/music/nucleo.tres"
 threat = 3.0
 entity_speed = 1.35

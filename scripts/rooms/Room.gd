@@ -245,7 +245,7 @@ static func geometry(lw: int, room_exits: Array[bool], v: int) -> Dictionary:
 static func hideout_geometry(lw: int) -> Dictionary:
 	if not _hideouts.has(lw):
 		var b := RoomBuilder.new(lw, [false, false, false, false], 0)
-		Worlds.def(lw).hideout.build(b)
+		HideoutKit.build(b)
 		_hideouts[lw] = {"mesh": RoomBuilder.commit(b.pieces, lw, true), "colliders": b.colliders}
 	return _hideouts[lw]
 

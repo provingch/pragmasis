@@ -6,7 +6,6 @@
 [ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="4_b0q8e"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/FloorTiles.gd" id="5_ng1j7"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/FloorBlocks.gd" id="6_fuh8c"]
-[ext_resource type="Script" path="res://scripts/worlds/kits/HideoutKit.gd" id="7_exijb"]
 [ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="8_88htb"]
 [ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="9_6m3oc"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="10_lb2bf"]
@@ -38,11 +37,6 @@ count_max = 3
 size = Vector3(0.8, 1.6, 1.6)
 height_jitter = 0.5
 levels = 2
-
-[sub_resource type="Resource" id="Resource_fuh8c"]
-script = ExtResource("7_exijb")
-front_kind = "wall"
-dressing = 2
 
 [sub_resource type="Resource" id="Resource_exijb"]
 script = ExtResource("8_88htb")
@@ -87,7 +81,6 @@ wall_props = Array[ExtResource("2_yn81e")]([SubResource("Resource_6m3oc")])
 ceiling_kit = SubResource("Resource_44eyd")
 ceiling_props = Array[ExtResource("2_yn81e")]([SubResource("Resource_yn81e"), SubResource("Resource_ceygy")])
 floor_props = Array[ExtResource("2_yn81e")]([SubResource("Resource_ng1j7")])
-hideout = SubResource("Resource_fuh8c")
 music = "res://audio/music/carne.tres"
 music_fx = SubResource("Resource_exijb")
 threat = 2.3
