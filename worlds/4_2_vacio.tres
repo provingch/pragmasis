@@ -18,8 +18,7 @@ depth = 2.2
 
 [sub_resource type="Resource" id="Resource_hd1h4"]
 script = ExtResource("5_7lc4p")
-lowpass_hz = 1200.0
-reverb = 0.5
+reverb = 0.3
 reverb_room = 1.0
 
 [sub_resource type="Resource" id="Resource_i2ftp"]

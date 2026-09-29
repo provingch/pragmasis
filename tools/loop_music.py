@@ -29,7 +29,7 @@ import numpy as np
 
 SR = 48000
 ROOT = Path(__file__).resolve().parent.parent
-TRACKS = ["carne", "sedimento", "umbral", "eter", "estatica", "persecucion", "nucleo"]
+TRACKS = ["carne", "sedimento", "umbral", "eter", "estatica", "persecucion", "nucleo", "vacio"]
 HOP = 1024
 CONTEXT = 2.0     # seconds compared before each candidate point
 XFADE = 1.0       # seconds of crossfade baked in before E
