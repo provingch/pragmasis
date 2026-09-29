@@ -1,0 +1,83 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=19 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_jv2d4"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_mv0tb"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="3_rsgjf"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="4_85pae"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Platform.gd" id="5_2b5cx"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="6_y8oj3"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="7_6aghq"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="8_75xea"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Layers.gd" id="9_yvm62"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorBlocks.gd" id="10_8iiav"]
+
+[sub_resource type="Resource" id="Resource_jv2d4"]
+script = ExtResource("1_jv2d4")
+
+[sub_resource type="Resource" id="Resource_mv0tb"]
+script = ExtResource("3_rsgjf")
+size = Vector3(1.4, 0.1, 1.4)
+
+[sub_resource type="Resource" id="Resource_rsgjf"]
+script = ExtResource("4_85pae")
+
+[sub_resource type="Resource" id="Resource_85pae"]
+script = ExtResource("5_2b5cx")
+height = 2.2
+edge_kind = "trim"
+tower = 2.6
+
+[sub_resource type="Resource" id="Resource_2b5cx"]
+script = ExtResource("6_y8oj3")
+lowpass_hz = 2400.0
+
+[sub_resource type="Resource" id="Resource_y8oj3"]
+script = ExtResource("8_75xea")
+
+[sub_resource type="Resource" id="Resource_6aghq"]
+script = ExtResource("9_yvm62")
+count_min = 6
+count_max = 10
+y_min = 3.6
+y_max = 9.2
+edge_kind = "trim"
+
+[sub_resource type="Resource" id="Resource_75xea"]
+script = ExtResource("10_8iiav")
+positions = Array[Vector3]([Vector3(3.175, 0, -2.1)])
+size = Vector3(3.1, 2.8, 0.9)
+levels = 3
+level_kind = "trim"
+
+[resource]
+script = ExtResource("7_6aghq")
+id = &"capas"
+display_name = "CAPAS"
+code = "S3"
+stratum = 1
+slot = 2
+wall_color = Color(0.5411765, 0.3529412, 0.18039216, 1)
+floor_color = Color(0.41568628, 0.2627451, 0.13333334, 1)
+accent_color = Color(0.6117647, 0.40784314, 0.21176471, 1)
+trim_color = Color(1, 0.6666667, 0.23529412, 1)
+light_color = Color(1, 0.69803923, 0.34117648, 1)
+fog_color = Color(0.14117648, 0.07058824, 0.039215688, 1)
+light_energy = 9.0
+light_y = 9.0
+flicker = "breathe"
+fog_begin = 7.0
+fog_height = -0.5
+fog_height_density = 0.25
+ambient = 0.08
+grime_frequency = 0.09
+grime = 0.12
+height = 10.0
+floor_kit = SubResource("Resource_rsgjf")
+wall_kit = SubResource("Resource_y8oj3")
+wall_props = Array[ExtResource("2_mv0tb")]([SubResource("Resource_6aghq"), SubResource("Resource_75xea")])
+ceiling_kit = SubResource("Resource_jv2d4")
+ceiling_props = Array[ExtResource("2_mv0tb")]([SubResource("Resource_mv0tb")])
+floor_props = Array[ExtResource("2_mv0tb")]([SubResource("Resource_85pae")])
+music = "res://audio/music/sedimento.tres"
+music_fx = SubResource("Resource_2b5cx")
+visibility = 0.55

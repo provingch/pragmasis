@@ -141,7 +141,7 @@ func free_stairs(y_walk: float, y_far: float, kind: String) -> void:
 	var h := y_mid - base
 	box(Vector3(LANDING, h, 1.0), Vector3(x2, base + h / 2.0, z1), kind, true)
 	stair(Vector3(x2, y_mid, z_turn), Vector3(x2, y_far, z_end), LANDING, kind, base)
-	route([Vector3(-0.8, 0, z1), Vector3(f.end.x - 0.3, NAN, z1), Vector3(x2, y_mid, z1), Vector3(x2, NAN, (z_turn + z_end) / 2.0), Vector3(x2, y_far, z_end - 0.4), Vector3(f.get_center().x + 0.6, y_far, f.position.y + 0.8)])
+	route([Vector3(-0.8, 0, z1), Vector3(f.end.x - 0.3, NAN, z1), Vector3(x2, y_mid, z1), Vector3(x2, NAN, (z_turn + z_end) / 2.0), Vector3(x2, y_far, z_end - 0.4), Vector3(f.get_center().x, y_far, f.position.y + 0.7)])
 
 ## A validation walk (room coordinates; y = NAN: on a ramp, not checked).
 func route(points: Array[Vector3]) -> void:

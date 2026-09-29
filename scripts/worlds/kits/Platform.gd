@@ -4,7 +4,7 @@ class_name Platform
 ## A raised block filling FREE, climbed by stairs along its outer (+z)
 ## side from the walkway: a lookout `height` above the floor (at most what
 ## the stairs climb, ~2.2 m). Optionally a second, taller block behind it
-## that only the eye reaches.
+## that only the eye reaches, in its far corner.
 
 @export var height := 2.0
 @export var kind := "accent"
@@ -30,5 +30,6 @@ func build(b: RoomBuilder) -> void:
 		b.box(Vector3(0.05, 0.05, top.size.y), Vector3(top.end.x, height, c.y), edge_kind)
 		b.box(Vector3(top.size.x, 0.05, 0.05), Vector3(c.x, height, top.position.y), edge_kind)
 	if tower > 0.0:
-		var t := Vector2(1.2, 1.2)
-		b.box(Vector3(t.x, tower, t.y), Vector3(top.end.x - t.x / 2.0 - 0.3, height + tower / 2.0, top.position.y + t.y / 2.0), kind, true)
+		# In the corner farthest from the stairs' landing.
+		var t := Vector2(1.0, 1.0)
+		b.box(Vector3(t.x, tower, t.y), Vector3(top.end.x - t.x / 2.0, height + tower / 2.0, top.end.y - t.y / 2.0), kind, true)

@@ -1,0 +1,92 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_co1ah"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_641nh"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Frames.gd" id="3_656iv"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="4_hkyov"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="5_nvyul"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorLines.gd" id="6_j4b0b"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="7_7muhl"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="8_ioui5"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="9_filjq"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorBlocks.gd" id="10_7qgel"]
+
+[sub_resource type="Resource" id="Resource_co1ah"]
+script = ExtResource("1_co1ah")
+
+[sub_resource type="Resource" id="Resource_641nh"]
+script = ExtResource("3_656iv")
+distances = PackedFloat32Array(1.75, 3.1, 4.5)
+post = 0.35
+opening = 3.6
+lintel = 0.5
+edge_kind = "trim"
+
+[sub_resource type="Resource" id="Resource_656iv"]
+script = ExtResource("4_hkyov")
+size = Vector3(0.5, 0.12, 0.5)
+
+[sub_resource type="Resource" id="Resource_hkyov"]
+script = ExtResource("5_nvyul")
+
+[sub_resource type="Resource" id="Resource_nvyul"]
+script = ExtResource("6_j4b0b")
+along_x = PackedFloat32Array(-0.75, 0.75)
+along_z = PackedFloat32Array(-0.75, 0.75)
+width = 0.1
+height = 0.07
+kind = "trim"
+
+[sub_resource type="Resource" id="Resource_j4b0b"]
+script = ExtResource("7_7muhl")
+highpass_hz = 180.0
+reverb = 0.75
+reverb_room = 1.0
+
+[sub_resource type="Resource" id="Resource_7muhl"]
+script = ExtResource("9_filjq")
+
+[sub_resource type="Resource" id="Resource_ioui5"]
+script = ExtResource("10_7qgel")
+positions = Array[Vector3]([Vector3(-3.175, 0, 3.175), Vector3(3.175, 0, -2.1)])
+size = Vector3(3.15, 0, 3.15)
+kind = "wall"
+
+[sub_resource type="Resource" id="Resource_filjq"]
+script = ExtResource("10_7qgel")
+positions = Array[Vector3]([Vector3(3.175, 0, -2.1)])
+size = Vector3(3.15, 0, 1)
+kind = "wall"
+
+[resource]
+script = ExtResource("8_ioui5")
+id = &"tunel"
+display_name = "TÚNEL"
+code = "S2"
+stratum = 1
+slot = 1
+wall_color = Color(0.5411765, 0.3529412, 0.18039216, 1)
+floor_color = Color(0.41568628, 0.2627451, 0.13333334, 1)
+accent_color = Color(0.6117647, 0.40784314, 0.21176471, 1)
+trim_color = Color(1, 0.6666667, 0.23529412, 1)
+light_color = Color(1, 0.69803923, 0.34117648, 1)
+fog_color = Color(0.14117648, 0.07058824, 0.039215688, 1)
+light_energy = 3.2
+light_y = 4.9
+flicker = "breathe"
+fog_begin = 7.0
+fog_height = -0.5
+fog_height_density = 0.25
+ambient = 0.08
+grime_frequency = 0.09
+grime = 0.12
+height = 5.5
+floor_kit = SubResource("Resource_hkyov")
+wall_kit = SubResource("Resource_7muhl")
+wall_props = Array[ExtResource("2_641nh")]([SubResource("Resource_ioui5"), SubResource("Resource_filjq")])
+ceiling_kit = SubResource("Resource_co1ah")
+ceiling_props = Array[ExtResource("2_641nh")]([SubResource("Resource_641nh"), SubResource("Resource_656iv")])
+floor_props = Array[ExtResource("2_641nh")]([SubResource("Resource_nvyul")])
+music = "res://audio/music/sedimento.tres"
+music_fx = SubResource("Resource_j4b0b")
+noise = 1.8

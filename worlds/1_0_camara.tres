@@ -1,0 +1,69 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_1cc3c"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_8topx"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="3_sdul8"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="4_dky37"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Platform.gd" id="5_vy01d"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="6_g8wd5"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="7_52ysa"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="8_4uia8"]
+
+[sub_resource type="Resource" id="Resource_1cc3c"]
+script = ExtResource("1_1cc3c")
+
+[sub_resource type="Resource" id="Resource_8topx"]
+script = ExtResource("3_sdul8")
+size = Vector3(0.9, 0.5, 0.9)
+offset = -2.0
+from_light = true
+
+[sub_resource type="Resource" id="Resource_sdul8"]
+script = ExtResource("4_dky37")
+
+[sub_resource type="Resource" id="Resource_dky37"]
+script = ExtResource("5_vy01d")
+height = 1.4
+edge_kind = "trim"
+
+[sub_resource type="Resource" id="Resource_vy01d"]
+script = ExtResource("6_g8wd5")
+reverb = 0.6
+reverb_room = 1.0
+
+[sub_resource type="Resource" id="Resource_g8wd5"]
+script = ExtResource("8_4uia8")
+height_min = 3.6
+height_max = 5.2
+top_edge_kind = "trim"
+
+[resource]
+script = ExtResource("7_52ysa")
+id = &"camara"
+display_name = "CÁMARA"
+code = "S1"
+stratum = 1
+wall_color = Color(0.5411765, 0.3529412, 0.18039216, 1)
+floor_color = Color(0.41568628, 0.2627451, 0.13333334, 1)
+accent_color = Color(0.6117647, 0.40784314, 0.21176471, 1)
+trim_color = Color(1, 0.6666667, 0.23529412, 1)
+light_color = Color(1, 0.69803923, 0.34117648, 1)
+fog_color = Color(0.14117648, 0.07058824, 0.039215688, 1)
+light_energy = 10.0
+light_y = 8.0
+flicker = "breathe"
+fog_begin = 7.0
+fog_height = -0.5
+fog_height_density = 0.25
+ambient = 0.08
+grime_frequency = 0.09
+grime = 0.12
+height = 10.0
+floor_kit = SubResource("Resource_sdul8")
+wall_kit = SubResource("Resource_g8wd5")
+ceiling_kit = SubResource("Resource_1cc3c")
+ceiling_props = Array[ExtResource("2_8topx")]([SubResource("Resource_8topx")])
+floor_props = Array[ExtResource("2_8topx")]([SubResource("Resource_dky37")])
+music = "res://audio/music/sedimento.tres"
+music_fx = SubResource("Resource_vy01d")
+stamina_drain = 1.6
