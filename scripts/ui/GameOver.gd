@@ -26,10 +26,10 @@ func _on_game_over() -> void:
 	else:
 		var names := PackedStringArray()
 		for v in GameManager.visited:
-			names.append(Worlds.def(v).display_name)
+			names.append(Worlds.def(v).tag())
 		title.text = "FIN DE DERIVA"
-		detail.text = "%s EN %s\nMUNDOS VISITADOS (%d)\n%s" % [GameManager.cause, Worlds.def(w).display_name, names.size(), "  ·  ".join(names)]
-		hint.text = "[ R ] REINTENTAR EN %s   //   [ ESC ] VOLVER AL MENÚ" % Worlds.def(GameManager.mode.start_world()).display_name
+		detail.text = "%s EN %s\nMUNDOS VISITADOS (%d)\n%s" % [GameManager.cause, Worlds.def(w).tag(), names.size(), "   /   ".join(names)]
+		hint.text = "[ R ] REINTENTAR EN %s   //   [ ESC ] VOLVER AL MENÚ" % Worlds.def(GameManager.mode.start_world()).tag()
 	visible = true
 	# Slam in: overshoot then settle, like a signal locking on.
 	root.modulate.a = 0.0

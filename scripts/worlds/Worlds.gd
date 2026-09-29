@@ -5,9 +5,10 @@ extends Node
 ##
 ## Topology: worlds come in strata (depth bands) of up to STRATUM_SIZE.
 ## Common portals move one slot within a stratum; fissures cross to the
-## neighbouring stratum, landing on the same slot (or the nearest one that
-## exists). Strata may be incomplete: with one world each, there are no
-## common portals and fissures do all the linking.
+## neighbouring stratum, landing on any of its slots (each fissure picks
+## one by its cell's hash, see RoomGenerator.link_of). Strata may be
+## incomplete: with one world each, there are no common portals and
+## fissures do all the linking.
 
 const DIR := "res://worlds/"
 const STRATUM_SIZE := 4
@@ -60,8 +61,9 @@ func portal_target(w: int, dir: int) -> int:
 	var t := w + dir
 	return t if stratum(t) == stratum(w) and slot(w) + dir >= 0 and has(t) else -1
 
-## Fissure: the neighbouring stratum (dir +1 deeper, -1 shallower), same
-## slot or the nearest existing one; -1 if that stratum is empty or absent.
+## The neighbouring stratum's world a fissure is drawn to by default (dir
+## +1 deeper, -1 shallower): same slot or the nearest existing one; -1 if
+## that stratum is empty or absent. (What the scanner shows next door.)
 func fissure_target(w: int, dir: int) -> int:
 	var best := -1
 	for t in in_stratum(stratum(w) + dir):
@@ -72,8 +74,11 @@ func fissure_target(w: int, dir: int) -> int:
 ## Every world one portal or fissure away.
 func links(w: int) -> Array[int]:
 	var out: Array[int] = []
-	for t in [portal_target(w, -1), portal_target(w, 1), fissure_target(w, -1), fissure_target(w, 1)]:
-		if t >= 0 and not t in out:
+	for t in [portal_target(w, -1), portal_target(w, 1)]:
+		if t >= 0:
+			out.append(t)
+	for t in in_stratum(stratum(w) - 1) + in_stratum(stratum(w) + 1):
+		if not t in out:
 			out.append(t)
 	return out
 

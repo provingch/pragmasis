@@ -67,7 +67,7 @@ func _step_entities(dir: int) -> void:
 
 func _refresh() -> void:
 	var d := Worlds.def(_worlds[_world])
-	_world_row.value = d.display_name
+	_world_row.value = d.tag()
 	_world_row.value_color = d.trim_color
 	_entities_row.value = ENTITIES[_entities][1]
 

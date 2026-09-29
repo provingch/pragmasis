@@ -47,7 +47,7 @@ const BUILD_NOW := 0
 const BUILD_BUDGET_MS := 3.0
 const WARM_BUDGET_MS := 2.0
 
-enum Salt { CARVE, EAST, SOUTH, PORTAL, PORTAL_DIR, STYLE, HIDEOUT, BEACON, ANCHOR, LIGHT }
+enum Salt { CARVE, EAST, SOUTH, PORTAL, PORTAL_DIR, STYLE, HIDEOUT, BEACON, ANCHOR, LIGHT, FISSURE_SLOT }
 
 ## Radii are Chebyshev distances in cells, set by Settings (set_radii).
 ## Cells within gen_radius of the player always exist.
@@ -272,10 +272,12 @@ func link_of(x: int, z: int, w: int) -> Vector2i:
 	var t := -1
 	if r < fissure:
 		dir = 1 if roll < deep / (1.0 + deep) else -1
-		t = Worlds.fissure_target(w, dir)
-		if t < 0:
-			t = Worlds.fissure_target(w, -dir)
-		return Vector2i(t, 1) if t >= 0 else NO_LINK
+		var to := Worlds.in_stratum(Worlds.stratum(w) + dir)
+		if to.is_empty():
+			to = Worlds.in_stratum(Worlds.stratum(w) - dir)
+		if to.is_empty():
+			return NO_LINK
+		return Vector2i(to[int(_rand(x, z, w, Salt.FISSURE_SLOT) * to.size())], 1)
 	if r < fissure + portal:
 		t = Worlds.portal_target(w, dir)
 		if t < 0:
@@ -338,6 +340,8 @@ func is_lit(x: int, z: int, w: int) -> bool:
 
 ## Anchor 8-12 rooms from `from`, in a world of `stratum_index`, with a
 ## maze path to it (candidates are tried in hash order until one has).
+## Its world: preferably one not visited this run and on another slot than
+## the player's (so getting there takes more than a straight drop).
 func place_anchor(from: Vector2i, stratum_index: int) -> void:
 	for k in 64:
 		var a := _rand(from.x, from.y, k, Salt.ANCHOR) * TAU
@@ -347,6 +351,12 @@ func place_anchor(from: Vector2i, stratum_index: int) -> void:
 			anchor_cell = target
 			break
 	var choices := Worlds.in_stratum(stratum_index)
+	var other_slot := choices.filter(func(w: int) -> bool: return Worlds.slot(w) != Worlds.slot(active_w))
+	var fresh := other_slot.filter(func(w: int) -> bool: return not w in GameManager.visited)
+	for pool: Array in [fresh, other_slot]:
+		if not pool.is_empty():
+			choices.assign(pool)
+			break
 	anchor_w = choices[int(_rand(anchor_cell.x, anchor_cell.y, 0, Salt.ANCHOR) * choices.size())]
 
 ## Rooms walked from a to b through doors (every layer shares the maze), or

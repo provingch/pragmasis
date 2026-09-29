@@ -30,7 +30,7 @@ func _ready() -> void:
 	label.modulate = c
 	label.font = Fonts.mono
 	var deeper := target_w > _here()
-	label.text = "%s%s %s\nESTRATO %d" % ["FISURA " if fissure else "", "▼" if deeper else "▲", def.display_name, def.stratum + 1]
+	label.text = "%s%s %s\nESTRATO %d" % ["FISURA " if fissure else "", "▼" if deeper else "▲", def.tag(), def.stratum + 1]
 	_t = randf() * 10.0
 	# Findable by ear, and which way it leads: shallower hums higher.
 	hum.pitch_scale = (0.89 if deeper else 1.12) * (0.6 if fissure else 1.0)

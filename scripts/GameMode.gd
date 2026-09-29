@@ -9,7 +9,7 @@ class_name GameMode
 @export var description := ""
 ## Anchors, the sequence clock, collapse, beacons, score and record.
 @export var anchors := true
-## World the run starts in (-1: the shallowest, Worlds.start()).
+## World the run starts in (-1: one of the surface's, at random).
 @export var start_w := -1
 ## Multiplies the portal and fissure chances (RoomGenerator.link_of).
 @export var link_scale := 1.0
@@ -36,4 +36,4 @@ static func free_roam(start_world: int, entity_delay: float) -> GameMode:
 	return m
 
 func start_world() -> int:
-	return start_w if start_w >= 0 else Worlds.start()
+	return start_w if start_w >= 0 else Worlds.in_stratum(0).pick_random()

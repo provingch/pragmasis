@@ -105,6 +105,10 @@ class_name WorldDef
 ## they are): 2 = twice as many ways down.
 @export var deep_fissures := 1.0
 
+## "U1 · PASO": how the HUD, the atlas and portals name it.
+func tag() -> String:
+	return "%s · %s" % [code, display_name]
+
 ## The kits in build order.
 func kits() -> Array[RoomKit]:
 	var out: Array[RoomKit] = []

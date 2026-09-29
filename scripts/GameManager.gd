@@ -16,6 +16,9 @@ signal collapsed
 
 const RECORD_PATH := "user://record.cfg"
 const ATLAS_PATH := "user://atlas.cfg"
+## Bumped when world ids change meaning: older atlases are dropped.
+const ATLAS_VERSION := 2
+const TOAST_TIME := 3.5
 const MENU := "res://scenes/ui/MainMenu.tscn"
 ## Sequence 1 gets FIRST_TIME seconds, each next one TIME_STEP less, down
 ## to MIN_TIME.
@@ -40,6 +43,9 @@ var running := false
 ## Centre-screen announcement (HUD draws it while banner_t > 0).
 var banner := ""
 var banner_t := 0.0
+## Smaller notice under the banner (a world entered for the first time).
+var toast := ""
+var toast_t := 0.0
 ## Set by the mode select screen before Main loads; kept across restarts.
 var mode := GameMode.normal()
 ## Worlds entered this run, in order.
@@ -52,11 +58,12 @@ func _ready() -> void:
 	if cfg.load(RECORD_PATH) == OK:
 		best = cfg.get_value("run", "depth", 0)
 	cfg = ConfigFile.new()
-	if cfg.load(ATLAS_PATH) == OK:
+	if cfg.load(ATLAS_PATH) == OK and cfg.get_value("atlas", "version", 1) == ATLAS_VERSION:
 		discovered.assign(cfg.get_value("atlas", "worlds", []))
 
 func _process(delta: float) -> void:
 	banner_t = maxf(banner_t - delta, 0.0)
+	toast_t = maxf(toast_t - delta, 0.0)
 	if not running or is_game_over or not mode.anchors:
 		return
 	time_left = maxf(time_left - delta, 0.0)
@@ -84,8 +91,11 @@ func visit(w: int) -> void:
 		discovered.append(w)
 		discovered.sort()
 		var cfg := ConfigFile.new()
+		cfg.set_value("atlas", "version", ATLAS_VERSION)
 		cfg.set_value("atlas", "worlds", discovered)
 		cfg.save(ATLAS_PATH)
+		toast = "MUNDO DESCUBIERTO  //  " + Worlds.def(w).tag()
+		toast_t = TOAST_TIME
 
 ## Discovered worlds, shallowest first (the start world always counts).
 func atlas() -> Array[int]:

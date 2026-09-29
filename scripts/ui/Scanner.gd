@@ -65,7 +65,7 @@ func _draw_compact() -> void:
 	var w := DimensionState.player_w
 	var p := Vector2(24, size.y - 44)
 	var blink := 1.0 if fmod(_t, 0.5) < 0.25 else 0.25
-	_text(p, "E%d // %s" % [Worlds.stratum(w) + 1, Worlds.def(w).display_name], FG, 13)
+	_text(p, "%s // %s" % [Worlds.def(w).code, Worlds.def(w).display_name], FG, 13)
 	_text(p + Vector2(0, 18), "[TAB] ESCÁNER DE FASE", DIM, 11)
 	if _entity_hunting_here():
 		_text(p + Vector2(0, -20), "■ ENTIDAD EN TU FASE", Color(RED, blink), 11)
@@ -79,6 +79,8 @@ func _draw_compact() -> void:
 		_draw_prompt(player)
 	if GameManager.banner_t > 0.0:
 		_draw_banner()
+	if GameManager.toast_t > 0.0:
+		_draw_toast()
 
 func _draw_clock(blink: float) -> void:
 	if not GameManager.running or not GameManager.mode.anchors:
@@ -135,6 +137,13 @@ func _draw_banner() -> void:
 	var col := RED if GameManager.is_collapsed else GREEN
 	draw_string(Fonts.heavy, Vector2(0, y), GameManager.banner, HORIZONTAL_ALIGNMENT_CENTER, size.x, 44, Color(col, a))
 
+func _draw_toast() -> void:
+	var a := clampf(GameManager.toast_t / 0.5, 0.0, 1.0) * clampf((GameManager.TOAST_TIME - GameManager.toast_t) / 0.2, 0.0, 1.0)
+	var y := size.y * 0.24
+	var col := Worlds.def(DimensionState.player_w).trim_color
+	draw_rect(Rect2(size.x * 0.3, y - 22, size.x * 0.4, 32), Color(0, 0, 0, 0.6 * a))
+	_text(Vector2(0, y), GameManager.toast, Color(col, a), 14, size.x, HORIZONTAL_ALIGNMENT_CENTER)
+
 # --- open device ------------------------------------------------------------
 
 func _draw_device() -> void:
@@ -176,7 +185,7 @@ func _draw_header() -> void:
 func _draw_side() -> void:
 	var w := DimensionState.player_w
 	# Macro numeral: the only big type on the device.
-	draw_string(Fonts.heavy, Vector2(14, HEADER_H + 84), "E%d" % (Worlds.stratum(w) + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 72, FG)
+	draw_string(Fonts.heavy, Vector2(14, HEADER_H + 84), Worlds.def(w).code, HORIZONTAL_ALIGNMENT_LEFT, -1, 72, FG)
 	_text(Vector2(16, HEADER_H + 110), Worlds.def(w).display_name, FG, 14)
 	var cell := _player_cell()
 	var rows := [
@@ -191,7 +200,7 @@ func _draw_side() -> void:
 	if aw >= 0:
 		var to := RoomGenerator.anchor_cell - cell
 		_text(Vector2(16, HEADER_H + 188), "ANCLA   ΔX%+d ΔZ%+d" % [-to.x if _mirrored() else to.x, to.y], GREEN, 11)
-		var where := "EN TU FASE" if aw == w else "EN %s // E%d" % [Worlds.def(aw).display_name, Worlds.stratum(aw) + 1]
+		var where := "EN TU FASE" if aw == w else "EN " + Worlds.def(aw).tag()
 		_text(Vector2(16, HEADER_H + 204), where, GREEN if aw == w else FG, 10)
 	# Threat meter: this world's intrinsic hostility, 5 blocks = x2.0.
 	var threat := Worlds.def(w).threat
@@ -331,7 +340,7 @@ func _draw_footer() -> void:
 	if link.x < 0:
 		_text(Vector2(14, y + 26), "CRUCE   [ SIN PORTAL ]", DIM, 11)
 		return
-	var tag := "%s %s %s // E%d" % ["FISURA" if link.y == 1 else "CRUCE", "▼" if link.x > pw else "▲", Worlds.def(link.x).display_name, Worlds.stratum(link.x) + 1]
+	var tag := "%s %s %s" % ["FISURA" if link.y == 1 else "CRUCE", "▼" if link.x > pw else "▲", Worlds.def(link.x).tag()]
 	_text(Vector2(14, y + 26), tag, FG, 11)
 	var risky := monster and monster.entity_w == link.x
 	_text(Vector2(360, y + 26), "[ RIESGO ]" if risky else "[ SEGURO ]", RED if risky else GREEN, 11)
