@@ -39,6 +39,8 @@ func _apply(w: int, time: float) -> void:
 	if time <= 0.0:
 		env.fog_light_color = s.fog_color
 		env.fog_depth_begin = s.fog_begin
+		env.fog_height = s.fog_height
+		env.fog_height_density = s.fog_height_density
 		env.background_color = s.fog_color
 		env.ambient_light_color = s.light_color
 		env.ambient_light_energy = s.ambient
@@ -46,6 +48,8 @@ func _apply(w: int, time: float) -> void:
 	var tw := create_tween().set_parallel()
 	tw.tween_property(env, "fog_light_color", s.fog_color, time)
 	tw.tween_property(env, "fog_depth_begin", s.fog_begin, time)
+	tw.tween_property(env, "fog_height", s.fog_height, time)
+	tw.tween_property(env, "fog_height_density", s.fog_height_density, time)
 	tw.tween_property(env, "background_color", s.fog_color, time)
 	tw.tween_property(env, "ambient_light_color", s.light_color, time)
 	tw.tween_property(env, "ambient_light_energy", s.ambient, time)

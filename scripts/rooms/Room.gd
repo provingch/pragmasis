@@ -40,8 +40,12 @@ const GLITCH_SHADER := preload("res://shaders/glitch.gdshader")
 const WATER_SHADER := preload("res://shaders/water.gdshader")
 const STAINED_SHADER := preload("res://shaders/stained.gdshader")
 const SPIN_SHADER := preload("res://shaders/spin.gdshader")
+const BEAM_SHADER := preload("res://shaders/beam.gdshader")
 ## Every material kind a kit may use; each world warms them all up.
-const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch", "water", "glass", "stained", "spin"]
+const KINDS := ["floor", "wall", "accent", "trim", "edge", "grate", "dark", "void", "glitch", "water", "glass", "stained", "spin", "beam"]
+## Physics layer of see-through colliders (bars): the player collides with
+## it, the entity's sight rays (world layer only) pass.
+const SEE_THROUGH_LAYER := 8
 
 enum Exit { NORTH, SOUTH, EAST, WEST }
 
@@ -60,8 +64,8 @@ var lit := true
 var _zones: Array = []
 
 static var _materials := {}
-static var _grime := {} # frequency -> ImageTexture
-static var _grime_tasks := {} # frequency -> WorkerThreadPool task id
+static var _grime := {} # Vector2(frequency, amount) -> ImageTexture
+static var _grime_tasks := {} # Vector2(frequency, amount) -> WorkerThreadPool task id
 # Unit cube's arrays, scaled per box on the CPU. (Reading a Mesh's arrays
 # is a GPU readback with a sync: never per box.)
 static var _cube: Array = []
@@ -73,7 +77,7 @@ static var _hideouts := {}
 
 var _mesh: MeshInstance3D
 var _fixture: MeshInstance3D
-var _light: OmniLight3D
+var _light: Light3D
 var _fixture_mat: StandardMaterial3D
 var _def: WorldDef
 var _base_energy := 1.0
@@ -96,6 +100,9 @@ func _ready() -> void:
 	_fixture.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var body := StaticBody3D.new()
 	add_child(body)
+	var bars := StaticBody3D.new()
+	bars.collision_layer = SEE_THROUGH_LAYER
+	add_child(bars)
 	var colliders: Array = built.colliders
 	if hideout:
 		var h: Dictionary = hideout_geometry(w)
@@ -104,8 +111,8 @@ func _ready() -> void:
 	for c: Array in colliders:
 		var cs := CollisionShape3D.new()
 		cs.shape = _shape(c[0])
-		cs.position = c[1]
-		body.add_child(cs)
+		cs.transform = Transform3D(c[2] if c.size() > 2 else Basis.IDENTITY, c[1])
+		(bars if c.size() > 3 and c[3] else body).add_child(cs)
 	if lit:
 		_build_light()
 	else:
@@ -191,14 +198,25 @@ func _instance(mesh: Mesh) -> MeshInstance3D:
 	add_child(mi)
 	return mi
 
+## Omni, or with WorldDef.spot_angle a spot aimed straight down: a hard
+## pool of light under it and the rest of the room left dark.
 func _build_light() -> void:
-	_light = OmniLight3D.new()
+	if _def.spot_angle > 0.0:
+		var spot := SpotLight3D.new()
+		spot.rotation.x = -PI / 2.0
+		spot.spot_angle = _def.spot_angle
+		spot.spot_range = _def.light_y + 4.0
+		spot.spot_attenuation = 0.6
+		_light = spot
+	else:
+		var omni := OmniLight3D.new()
+		# Just past the room's own corners. Without shadows a wider light only
+		# leaks through walls into the neighbours, and every extra light
+		# overlapping a pixel costs (1.6 rooms: ~4.5 ms more on an Iris GT1).
+		omni.omni_range = maxf(ROOM_SIZE * 1.2, _def.light_y + 3.0)
+		omni.omni_attenuation = 0.8
+		_light = omni
 	_light.position = Vector3(0, _def.light_y, 0)
-	# Just past the room's own corners. Without shadows a wider light only
-	# leaks through walls into the neighbours, and every extra light
-	# overlapping a pixel costs (1.6 rooms: ~4.5 ms more on an Iris GT1).
-	_light.omni_range = ROOM_SIZE * 1.2
-	_light.omni_attenuation = 0.8
 	_light.light_color = _def.light_color
 	_base_energy = _def.light_energy
 	_light.shadow_enabled = false # see set_shadow()
@@ -300,6 +318,11 @@ static func layer_material(lw: int, kind: String) -> Material:
 			sm.emission_energy_multiplier = 0.35
 			sm.roughness = 0.2
 			mat = sm
+		"beam": # a shaft of light: additive, fading toward its silhouette
+			var sm := ShaderMaterial.new()
+			sm.shader = BEAM_SHADER
+			sm.set_shader_parameter("color", s.light_color)
+			mat = sm
 		"trim", "edge", "grate":
 			var sm := StandardMaterial3D.new()
 			sm.albedo_color = Color.BLACK if kind == "grate" else s.trim_color
@@ -321,7 +344,7 @@ static func layer_material(lw: int, kind: String) -> Material:
 			sm.uv1_triplanar = true
 			sm.uv1_world_triplanar = true
 			sm.uv1_scale = Vector3.ONE * 0.12
-			sm.roughness = s.roughness
+			sm.roughness = s.floor_roughness if kind == "floor" and s.floor_roughness >= 0.0 else s.roughness
 			sm.metallic = s.metallic if kind == "accent" else s.metallic * 0.3
 			mat = sm
 	_materials[key] = mat
@@ -334,7 +357,7 @@ static func layer_material(lw: int, kind: String) -> Material:
 ## on the integrated GPU's host), a hitch every time a world warmed up.
 ## `now`: generate right here (level load).
 static func _grime_texture(lw: int, now := false) -> Texture2D:
-	var f := Worlds.def(lw).grime_frequency
+	var f := Vector2(Worlds.def(lw).grime_frequency, Worlds.def(lw).grime)
 	if not _grime.has(f):
 		var blank := Image.create_empty(1, 1, false, Image.FORMAT_L8)
 		blank.fill(Color.WHITE)
@@ -346,22 +369,24 @@ static func _grime_texture(lw: int, now := false) -> Texture2D:
 			_grime_tasks[f] = WorkerThreadPool.add_task(func() -> void: _grime_ready.call_deferred(f, _grime_image(f)))
 	return _grime[f]
 
-static func _grime_ready(f: float, img: Image) -> void:
+static func _grime_ready(f: Vector2, img: Image) -> void:
 	# Tasks must be waited on to release what they hold (here: the texture).
 	WorkerThreadPool.wait_for_task_completion(_grime_tasks[f])
 	_grime_tasks.erase(f)
 	if _grime.has(f):
 		_grime[f].set_image(img)
 
-## 512x512 seamless fractal noise, remapped to 0.72..1.0 grey, with mipmaps.
-static func _grime_image(frequency: float) -> Image:
+## 512x512 seamless fractal noise (x: frequency), remapped to
+## (1 - y)..1.0 grey (y: amount), with mipmaps.
+static func _grime_image(f: Vector2) -> Image:
 	var noise := FastNoiseLite.new()
-	noise.frequency = frequency
+	noise.frequency = f.x
 	noise.fractal_octaves = 5
 	var img := noise.get_seamless_image(512, 512)
 	var data := img.get_data()
+	var low := roundi(255 * (1.0 - f.y))
 	for i in data.size():
-		data[i] = 184 + data[i] * 71 / 255
+		data[i] = low + data[i] * (255 - low) / 255
 	img.set_data(512, 512, false, Image.FORMAT_L8, data)
 	img.generate_mipmaps()
 	return img

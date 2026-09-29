@@ -44,6 +44,9 @@ const JERK_TILT := 0.5 # rad of tilt per metre of lag
 const JERK_STIFF := 180.0
 const JERK_DAMP := 11.0
 
+## Off in harnesses, so a test run never grabs the real mouse.
+static var capture_mouse := true
+
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
 @onready var steps_walk: AudioStreamPlayer = $StepsWalk
@@ -74,7 +77,8 @@ var _prev_vel := Vector3.ZERO
 
 func _ready() -> void:
 	add_to_group("player")
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	if capture_mouse:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	_flash = SpotLight3D.new()
 	_flash.spot_range = 16.0
 	_flash.spot_angle = 26.0

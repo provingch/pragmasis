@@ -33,7 +33,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		options.in_game = true
 		options.closed.connect(func() -> void:
 			get_tree().paused = false
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED)
+			if Player.capture_mouse:
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED)
 		add_child(options)
 	var key := event as InputEventKey
 	if debug_world_jump and key and key.pressed and not key.echo and key.keycode in [KEY_PAGEUP, KEY_PAGEDOWN]:

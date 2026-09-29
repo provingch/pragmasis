@@ -11,6 +11,8 @@ class_name WorldDef
 
 @export var id: StringName
 @export var display_name := ""
+## Short visible code: stratum letter + slot (U1, S3, X4...).
+@export var code := ""
 
 @export_group("Topología")
 ## Depth band (0 = surface). Worlds are grouped in strata of Worlds.STRATUM_SIZE.
@@ -35,6 +37,11 @@ class_name WorldDef
 @export var light_y := 3.5
 @export_enum("steady", "stutter", "breathe", "heartbeat", "glitch") var flicker := "steady"
 @export var fog_begin := 10.0
+## Height fog: thicker below fog_height (pits read misty). 0 density = off.
+@export var fog_height := 0.0
+@export var fog_height_density := 0.0
+## 0: the room light is an omni. Otherwise a spot aimed down, this wide (deg).
+@export var spot_angle := 0.0
 ## Ambient light, in light_color.
 @export var ambient := 0.4
 ## Share of rooms (picked per cell, deterministic) that have their light;
@@ -45,10 +52,14 @@ class_name WorldDef
 
 @export_group("Superficies")
 @export_range(0.0, 1.0) var roughness := 0.9
+## The floor's own roughness (-1: same as roughness). Low = glossy.
+@export_range(-1.0, 1.0) var floor_roughness := -1.0
 ## Props (accent) get it all; walls and floor 30% of it.
 @export_range(0.0, 1.0) var metallic := 0.0
 ## Frequency of the world-space grime noise every surface shares.
 @export var grime_frequency := 0.12
+## How dark the grime gets (0 = clean, one flat material per surface).
+@export_range(0.0, 1.0) var grime := 0.28
 
 @export_group("Arquitectura")
 ## Ceiling height (m).
