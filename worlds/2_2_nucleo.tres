@@ -1,0 +1,82 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=18 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_ichae"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_csheh"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/LightShaft.gd" id="3_pf6f1"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="4_2mcmv"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Platform.gd" id="5_rb6uv"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="6_6nviy"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="7_ycre5"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="8_3e2lt"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Layers.gd" id="9_ros44"]
+
+[sub_resource type="Resource" id="Resource_ichae"]
+script = ExtResource("1_ichae")
+hole = Vector2(1, 1)
+
+[sub_resource type="Resource" id="Resource_csheh"]
+script = ExtResource("3_pf6f1")
+size = Vector2(1.4, 1.4)
+
+[sub_resource type="Resource" id="Resource_pf6f1"]
+script = ExtResource("3_pf6f1")
+size = Vector2(0.35, 0.35)
+core_kind = "edge"
+
+[sub_resource type="Resource" id="Resource_2mcmv"]
+script = ExtResource("4_2mcmv")
+
+[sub_resource type="Resource" id="Resource_rb6uv"]
+script = ExtResource("5_rb6uv")
+height = 1.6
+edge_kind = "trim"
+
+[sub_resource type="Resource" id="Resource_6nviy"]
+script = ExtResource("6_6nviy")
+reverb = 0.3
+
+[sub_resource type="Resource" id="Resource_ycre5"]
+script = ExtResource("8_3e2lt")
+
+[sub_resource type="Resource" id="Resource_3e2lt"]
+script = ExtResource("9_ros44")
+count_min = 1
+count_max = 3
+y_min = 5.0
+y_max = 8.5
+depth_max = 2.0
+
+[resource]
+script = ExtResource("7_ycre5")
+id = &"nucleo"
+display_name = "NÚCLEO"
+code = "E3"
+stratum = 2
+slot = 2
+wall_color = Color(0.41960785, 0.4392157, 0.76862746, 1)
+floor_color = Color(0.2901961, 0.30980393, 0.5803922, 1)
+accent_color = Color(0.4862745, 0.50980395, 0.83137256, 1)
+trim_color = Color(0.7058824, 0.7372549, 1, 1)
+light_color = Color(0.8235294, 0.83137256, 1, 1)
+fog_color = Color(0.26666668, 0.28235295, 0.5647059, 1)
+light_energy = 10.0
+light_y = 9.6
+flicker = "breathe"
+fog_begin = 6.0
+fog_height = -1.0
+fog_height_density = 0.4
+spot_angle = 42.0
+ambient = 0.28
+roughness = 0.75
+grime_frequency = 0.07
+grime = 0.08
+height = 10.0
+floor_kit = SubResource("Resource_2mcmv")
+wall_kit = SubResource("Resource_ycre5")
+wall_props = Array[ExtResource("2_csheh")]([SubResource("Resource_3e2lt")])
+ceiling_kit = SubResource("Resource_ichae")
+ceiling_props = Array[ExtResource("2_csheh")]([SubResource("Resource_csheh"), SubResource("Resource_pf6f1")])
+floor_props = Array[ExtResource("2_csheh")]([SubResource("Resource_rb6uv")])
+music = "res://audio/music/nucleo.tres"
+music_fx = SubResource("Resource_6nviy")
+threat = 1.6
