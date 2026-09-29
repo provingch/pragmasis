@@ -3,7 +3,8 @@ extends CanvasLayer
 ## Graphics options. Every row applies (and saves) the moment it changes,
 ## so there's nothing to confirm or cancel. Opened from MainMenu, or in game
 ## with ESC (tree paused; this keeps processing, and the live FPS counter
-## then measures the actual scene behind).
+## then measures the actual scene behind). In game it also offers the way
+## back to the main menu.
 
 signal closed
 
@@ -36,6 +37,8 @@ const ROWS := [
 @onready var fps: Label = %Fps
 
 var _buttons: Array[HudButton] = []
+## Opened from a run (set before adding it): shows VOLVER AL MENÚ.
+var in_game := false
 
 func _ready() -> void:
 	MenuStyle.fit($Root/UI)
@@ -57,6 +60,9 @@ func _ready() -> void:
 		_buttons.append(b)
 	%Back.pressed.connect(_close)
 	%Back.focus_entered.connect(func() -> void: help.text = "")
+	%ToMenu.visible = in_game
+	%ToMenu.pressed.connect(GameManager.to_menu)
+	%ToMenu.focus_entered.connect(func() -> void: help.text = "Termina la partida actual.")
 	Settings.changed.connect(_refresh)
 	_refresh()
 	_buttons[0].grab_focus()

@@ -30,6 +30,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().paused = true
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		var options := OPTIONS.instantiate()
+		options.in_game = true
 		options.closed.connect(func() -> void:
 			get_tree().paused = false
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED)

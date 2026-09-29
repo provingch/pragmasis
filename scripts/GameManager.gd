@@ -3,7 +3,10 @@ extends Node
 ## Autoload. The run: sequences (reach the anchor before the clock runs
 ## out), collapse when it does. Each anchor lies one stratum deeper than
 ## the last; score = the deepest stratum reached through an anchor, best
-## score persisted. Difficulty rises per sequence.
+## score persisted. Difficulty rises per sequence. All of that only where
+## the active GameMode has anchors.
+##
+## Also the Atlas: every world ever entered, in any mode (persisted).
 
 signal game_over
 ## World regenerates around the player on this (emitted from a process
@@ -12,6 +15,8 @@ signal sequence_completed(completed: int)
 signal collapsed
 
 const RECORD_PATH := "user://record.cfg"
+const ATLAS_PATH := "user://atlas.cfg"
+const MENU := "res://scenes/ui/MainMenu.tscn"
 ## Sequence 1 gets FIRST_TIME seconds, each next one TIME_STEP less, down
 ## to MIN_TIME.
 const FIRST_TIME := 180.0
@@ -35,15 +40,24 @@ var running := false
 ## Centre-screen announcement (HUD draws it while banner_t > 0).
 var banner := ""
 var banner_t := 0.0
+## Set by the mode select screen before Main loads; kept across restarts.
+var mode := GameMode.normal()
+## Worlds entered this run, in order.
+var visited: Array[int] = []
+## Worlds ever entered (persisted).
+var discovered: Array[int] = []
 
 func _ready() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(RECORD_PATH) == OK:
 		best = cfg.get_value("run", "depth", 0)
+	cfg = ConfigFile.new()
+	if cfg.load(ATLAS_PATH) == OK:
+		discovered.assign(cfg.get_value("atlas", "worlds", []))
 
 func _process(delta: float) -> void:
 	banner_t = maxf(banner_t - delta, 0.0)
-	if not running or is_game_over:
+	if not running or is_game_over or not mode.anchors:
 		return
 	time_left = maxf(time_left - delta, 0.0)
 	if time_left <= 0.0 and not is_collapsed:
@@ -59,6 +73,28 @@ func start_run() -> void:
 	time_left = time_limit()
 	is_collapsed = false
 	running = true
+	visited.clear()
+	visit(DimensionState.player_w)
+
+## The player is in world w (run start, portal, fissure).
+func visit(w: int) -> void:
+	if not w in visited:
+		visited.append(w)
+	if not w in discovered:
+		discovered.append(w)
+		discovered.sort()
+		var cfg := ConfigFile.new()
+		cfg.set_value("atlas", "worlds", discovered)
+		cfg.save(ATLAS_PATH)
+
+## Discovered worlds, shallowest first (the start world always counts).
+func atlas() -> Array[int]:
+	var out: Array[int] = [Worlds.start()]
+	for w in discovered:
+		if Worlds.has(w) and not w in out:
+			out.append(w)
+	out.sort()
+	return out
 
 func score() -> int:
 	return depth
@@ -116,6 +152,15 @@ func restart() -> void:
 	is_game_over = false
 	get_tree().paused = false
 	get_tree().reload_current_scene()
+
+func to_menu() -> void:
+	DimensionState.reset()
+	AudioManager.reset()
+	running = false
+	is_game_over = false
+	get_tree().paused = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	get_tree().change_scene_to_file(MENU)
 
 func _announce(text: String) -> void:
 	banner = text

@@ -52,6 +52,10 @@ var _player: Player
 @onready var glow: OmniLight3D = $Glow
 
 func _ready() -> void:
+	if not GameManager.mode.entities:
+		process_mode = PROCESS_MODE_DISABLED
+		queue_free()
+		return
 	add_to_group("monster")
 	visible = false
 	_player = get_tree().get_first_node_in_group("player") as Player
@@ -78,7 +82,7 @@ func coherence() -> float:
 ## (the one the player is in right now) both shorten it.
 func spawn_delay() -> float:
 	var threat := Worlds.def(DimensionState.player_w).threat
-	return lerpf(MAX_SPAWN_DELAY, MIN_SPAWN_DELAY, coherence()) / threat / GameManager.threat_scale()
+	return lerpf(MAX_SPAWN_DELAY, MIN_SPAWN_DELAY, coherence()) / threat / GameManager.threat_scale() * GameManager.mode.spawn_delay_scale
 
 ## The player slipped into a hideout: true if it saw them do it.
 func saw_hiding() -> bool:

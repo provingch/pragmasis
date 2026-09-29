@@ -23,6 +23,11 @@ var value := "":
 	set(v):
 		value = v
 		queue_redraw()
+## Draws the value in this color instead of the label's (alpha 0: don't).
+var value_color := Color.TRANSPARENT:
+	set(v):
+		value_color = v
+		queue_redraw()
 
 var _font: Font
 
@@ -59,4 +64,4 @@ func _draw() -> void:
 	var base := (size.y + _font.get_ascent(font_size) - _font.get_descent(font_size)) / 2.0
 	draw_string(_font, Vector2(PAD_L + MARK + GAP, base), label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 	if value != "":
-		draw_string(_font, Vector2(0, base), "<  %s  >" % value, HORIZONTAL_ALIGNMENT_RIGHT, size.x - PAD_R, font_size, color)
+		draw_string(_font, Vector2(0, base), "<  %s  >" % value, HORIZONTAL_ALIGNMENT_RIGHT, size.x - PAD_R, font_size, value_color if value_color.a > 0.0 else color)

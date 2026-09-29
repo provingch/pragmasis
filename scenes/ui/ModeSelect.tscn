@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://scripts/ui/Options.gd" id="1_opt"]
+[ext_resource type="Script" path="res://scripts/ui/ModeSelect.gd" id="1_mode"]
 [ext_resource type="Script" path="res://scripts/ui/MenuDecor.gd" id="2_decor"]
 [ext_resource type="Script" path="res://scripts/ui/HudButton.gd" id="3_btn"]
 
@@ -13,10 +13,9 @@ gradient = SubResource("Gradient_dim")
 width = 256
 height = 4
 
-[node name="Options" type="CanvasLayer"]
-process_mode = 3
+[node name="ModeSelect" type="CanvasLayer"]
 layer = 10
-script = ExtResource("1_opt")
+script = ExtResource("1_mode")
 
 [node name="Root" type="Control" parent="."]
 layout_mode = 3
@@ -84,12 +83,12 @@ kind = 3
 [node name="Title" type="Label" parent="Root/UI/Panel"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "OPCIONES"
+text = "NUEVA PARTIDA"
 
 [node name="Subtitle" type="Label" parent="Root/UI/Panel"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "CALIBRACIÓN DE RENDER"
+text = "SELECCIÓN DE MODO"
 text_overrun_behavior = 3
 
 [node name="Rows" type="VBoxContainer" parent="Root/UI/Panel"]
@@ -103,11 +102,6 @@ custom_minimum_size = Vector2(720, 48)
 layout_mode = 2
 autowrap_mode = 3
 
-[node name="Restart" type="Label" parent="Root/UI/Panel"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "▲ REINICIÁ EL JUEGO PARA APLICAR EL MÉTODO DE RENDER"
-
 [node name="Back" type="Button" parent="Root/UI/Panel"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -115,28 +109,6 @@ size_flags_horizontal = 0
 script = ExtResource("3_btn")
 label = "VOLVER"
 font_size = 28
-
-[node name="ToMenu" type="Button" parent="Root/UI/Panel"]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-size_flags_horizontal = 0
-script = ExtResource("3_btn")
-label = "VOLVER AL MENÚ"
-font_size = 28
-
-[node name="Fps" type="Label" parent="Root/UI"]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -456.0
-offset_top = 30.0
-offset_right = -56.0
-offset_bottom = 60.0
-grow_horizontal = 0
-horizontal_alignment = 2
 
 [node name="Scanlines" type="Control" parent="Root"]
 layout_mode = 1

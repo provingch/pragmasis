@@ -6,7 +6,8 @@ extends Control
 ## apart by label and line weight, not hue. Square corners only.
 ##
 ## Closed, it's the HUD: layer, sequence clock, stamina, flashlight
-## battery, hideout prompt, and the centre-screen announcements.
+## battery, hideout prompt, and the centre-screen announcements. Without
+## anchors (GameMode.anchors) there's no clock and no way-out readout.
 ##
 ## In a world with scanner_mirror the maps (and the anchor's ΔX) come out
 ## flipped left/right. The tell: now and then the header flips too.
@@ -80,7 +81,7 @@ func _draw_compact() -> void:
 		_draw_banner()
 
 func _draw_clock(blink: float) -> void:
-	if not GameManager.running:
+	if not GameManager.running or not GameManager.mode.anchors:
 		return
 	var y := 30.0
 	if GameManager.is_collapsed:
@@ -186,11 +187,12 @@ func _draw_side() -> void:
 	for i in rows.size():
 		_text(Vector2(16, HEADER_H + 132 + i * 16), rows[i], DIM, 11)
 	# The way out: cells to go and the anchor's layer.
-	var to := RoomGenerator.anchor_cell - cell
 	var aw := RoomGenerator.anchor_w
-	_text(Vector2(16, HEADER_H + 188), "ANCLA   ΔX%+d ΔZ%+d" % [-to.x if _mirrored() else to.x, to.y], GREEN, 11)
-	var where := "EN TU FASE" if aw == w else "EN %s // E%d" % [Worlds.def(aw).display_name, Worlds.stratum(aw) + 1]
-	_text(Vector2(16, HEADER_H + 204), where, GREEN if aw == w else FG, 10)
+	if aw >= 0:
+		var to := RoomGenerator.anchor_cell - cell
+		_text(Vector2(16, HEADER_H + 188), "ANCLA   ΔX%+d ΔZ%+d" % [-to.x if _mirrored() else to.x, to.y], GREEN, 11)
+		var where := "EN TU FASE" if aw == w else "EN %s // E%d" % [Worlds.def(aw).display_name, Worlds.stratum(aw) + 1]
+		_text(Vector2(16, HEADER_H + 204), where, GREEN if aw == w else FG, 10)
 	# Threat meter: this world's intrinsic hostility, 5 blocks = x2.0.
 	var threat := Worlds.def(w).threat
 	var blocks := clampi(roundi(threat * 2.5), 1, 5)
@@ -275,7 +277,7 @@ func _draw_layer_contents(p0: Vector2, w: int, here: bool) -> void:
 	# Panel coordinates are relative to the player's cell centre.
 	var origin := center - Vector2(cell) * CELL
 	var to := Vector2(RoomGenerator.anchor_cell - cell)
-	if here and to.length() > 0.0:
+	if here and RoomGenerator.anchor_w >= 0 and to.length() > 0.0:
 		# Arrow toward the anchor, from the edge of the window.
 		var dir := to.normalized()
 		var tip := center + dir * CELL * (r + 0.5) * 0.92

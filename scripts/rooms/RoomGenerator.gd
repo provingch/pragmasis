@@ -20,10 +20,12 @@ extends Node
 ## BEACON_BLOCK block in every other world, always lead one hop closer to
 ## the anchor's world (a portal or a fissure), so the way there is never
 ## more than a few rooms off. A completed sequence reseeds the whole world.
+## A GameMode without anchors has neither (anchor_w = -1).
 
 const ROOM_SCENE := preload("res://scenes/rooms/Room.tscn")
 ## Per room: a common portal (within the stratum, where it has a
-## neighbouring slot) or, rarer, a fissure to the next stratum.
+## neighbouring slot) or, rarer, a fissure to the next stratum. Both times
+## GameMode.link_scale.
 const PORTAL_CHANCE := 1.0 / 12.0
 const FISSURE_CHANCE := 1.0 / 20.0
 const NO_LINK := Vector2i(-1, 0)
@@ -61,6 +63,7 @@ var rooms: Dictionary[Vector2i, Room] = {}
 var active_w := 0
 var world_seed := 0
 var anchor_cell := Vector2i.ZERO
+## -1: no anchor (and no beacons) this run.
 var anchor_w := 0
 
 var _parent: Node3D
@@ -79,7 +82,8 @@ func init_world(parent: Node3D, player: Node3D, start_w: int) -> void:
 	# The world you start in, whole, now (level load); the rest trickles in.
 	Room._grime_texture(start_w, true)
 	_queue_warm(start_w)
-	for step: Callable in _warm_steps[start_w]:
+	# Already warm from an earlier run (restart, back to the menu): no steps.
+	for step: Callable in _warm_steps.get(start_w, []):
 		step.call()
 	_warm_steps.erase(start_w)
 	_warm_order.erase(start_w)
@@ -97,7 +101,9 @@ func regenerate() -> void:
 func _reseed() -> void:
 	world_seed = randi()
 	_center = cell_of(_player.global_position)
-	place_anchor(_center, GameManager.anchor_stratum())
+	anchor_w = -1
+	if GameManager.mode.anchors:
+		place_anchor(_center, GameManager.anchor_stratum())
 	_stream()
 
 func _process(_delta: float) -> void:
@@ -252,18 +258,20 @@ func exits_for(x: int, z: int) -> Array[bool]:
 ## Where cell (x, z)'s portal leads in world w: Vector2i(target world,
 ## 1 if it's a fissure), NO_LINK for none.
 func link_of(x: int, z: int, w: int) -> Vector2i:
-	if w != anchor_w and is_beacon(x, z):
+	if anchor_w >= 0 and w != anchor_w and is_beacon(x, z):
 		var t := Worlds.step_toward(w, anchor_w)
 		return Vector2i(t, int(Worlds.stratum(t) != Worlds.stratum(w)))
 	var r := _rand(x, z, w, Salt.PORTAL)
+	var fissure := FISSURE_CHANCE * GameManager.mode.link_scale
+	var portal := PORTAL_CHANCE * GameManager.mode.link_scale
 	var dir := 1 if _rand(x, z, w, Salt.PORTAL_DIR) < 0.5 else -1
 	var t := -1
-	if r < FISSURE_CHANCE:
+	if r < fissure:
 		t = Worlds.fissure_target(w, dir)
 		if t < 0:
 			t = Worlds.fissure_target(w, -dir)
 		return Vector2i(t, 1) if t >= 0 else NO_LINK
-	if r < FISSURE_CHANCE + PORTAL_CHANCE:
+	if r < fissure + portal:
 		t = Worlds.portal_target(w, dir)
 		if t < 0:
 			t = Worlds.portal_target(w, -dir)
