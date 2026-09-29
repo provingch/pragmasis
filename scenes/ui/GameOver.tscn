@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://cq8n1v3m5x7d9"]
+[gd_scene load_steps=3 format=3 uid="uid://cq8n1v3m5x7d9"]
 
 [ext_resource type="Script" path="res://scripts/ui/GameOver.gd" id="1_gameover"]
+[ext_resource type="Script" path="res://scripts/ui/AvatarView.gd" id="2_avatar"]
 
 [node name="GameOver" type="CanvasLayer"]
 layer = 5
@@ -33,6 +34,14 @@ offset_bottom = 120.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
+
+[node name="Avatar" type="SubViewportContainer" parent="Control/VBox"]
+custom_minimum_size = Vector2(240, 300)
+layout_mode = 2
+size_flags_horizontal = 4
+script = ExtResource("2_avatar")
+edge_color = Color(1, 0.164, 0.164, 1)
+crouching = true
 
 [node name="Title" type="Label" parent="Control/VBox"]
 layout_mode = 2

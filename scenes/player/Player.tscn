@@ -1,10 +1,11 @@
-[gd_scene load_steps=7 format=3 uid="uid://dqx1m3n8v2t5b"]
+[gd_scene load_steps=8 format=3 uid="uid://dqx1m3n8v2t5b"]
 
 [ext_resource type="Script" path="res://scripts/player/Player.gd" id="1_player"]
 [ext_resource type="AudioStream" path="res://audio/sfx/steps_walk.tres" id="2_walk"]
 [ext_resource type="AudioStream" path="res://audio/sfx/steps_run.tres" id="3_run"]
 [ext_resource type="AudioStream" path="res://audio/sfx/breath.wav" id="4_breath"]
 [ext_resource type="Script" path="res://scripts/player/AirParticles.gd" id="5_air"]
+[ext_resource type="PackedScene" path="res://scenes/player/PlayerAvatar.tscn" id="6_avatar"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
 radius = 0.4
@@ -42,3 +43,7 @@ bus = &"SFX"
 
 [node name="AirParticles" type="GPUParticles3D" parent="."]
 script = ExtResource("5_air")
+
+[node name="Avatar" parent="." instance=ExtResource("6_avatar")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0.12)
+first_person = true

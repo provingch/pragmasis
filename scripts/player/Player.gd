@@ -52,6 +52,8 @@ static var capture_mouse := true
 @onready var steps_walk: AudioStreamPlayer = $StepsWalk
 @onready var steps_run: AudioStreamPlayer = $StepsRun
 @onready var breath: AudioStreamPlayer = $Breath
+## Your own body: casts your shadow, shows your legs when you look down.
+@onready var avatar: PlayerAvatar = $Avatar
 
 var stamina := 1.0
 var exhausted := 0.0
@@ -152,6 +154,8 @@ func _physics_process(delta: float) -> void:
 	var hspeed := Vector2(velocity.x, velocity.z).length()
 	_bob_amount = clampf(hspeed / RUN_SPEED, 0.0, 1.0)
 	var running := sprinting and hspeed > 0.1
+	avatar.move_speed = hspeed if is_on_floor() else 0.0
+	avatar.running = running
 	if is_on_floor() and hspeed > 0.1:
 		var before := _bob_t
 		_bob_t += delta * hspeed * BOB_FREQ
