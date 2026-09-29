@@ -262,11 +262,14 @@ func link_of(x: int, z: int, w: int) -> Vector2i:
 		var t := Worlds.step_toward(w, anchor_w)
 		return Vector2i(t, int(Worlds.stratum(t) != Worlds.stratum(w)))
 	var r := _rand(x, z, w, Salt.PORTAL)
-	var fissure := FISSURE_CHANCE * GameManager.mode.link_scale
+	var roll := _rand(x, z, w, Salt.PORTAL_DIR)
+	var deep := Worlds.def(w).deep_fissures
+	var fissure := FISSURE_CHANCE * GameManager.mode.link_scale * (1.0 + deep) / 2.0
 	var portal := PORTAL_CHANCE * GameManager.mode.link_scale
-	var dir := 1 if _rand(x, z, w, Salt.PORTAL_DIR) < 0.5 else -1
+	var dir := 1 if roll < 0.5 else -1
 	var t := -1
 	if r < fissure:
+		dir = 1 if roll < deep / (1.0 + deep) else -1
 		t = Worlds.fissure_target(w, dir)
 		if t < 0:
 			t = Worlds.fissure_target(w, -dir)

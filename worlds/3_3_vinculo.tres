@@ -1,0 +1,92 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=21 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_dvlwo"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_v4a73"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="3_qj1ro"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/LightShaft.gd" id="4_10u08"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="5_lc3lf"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Platform.gd" id="6_pyoko"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorLines.gd" id="7_qhje0"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="8_skhh1"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="9_m77pm"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="10_136jp"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="11_2xt4f"]
+
+[sub_resource type="Resource" id="Resource_dvlwo"]
+script = ExtResource("1_dvlwo")
+
+[sub_resource type="Resource" id="Resource_v4a73"]
+script = ExtResource("3_qj1ro")
+size = Vector3(1.2, 0.08, 0.3)
+
+[sub_resource type="Resource" id="Resource_qj1ro"]
+script = ExtResource("4_10u08")
+size = Vector2(1.6, 1.6)
+
+[sub_resource type="Resource" id="Resource_10u08"]
+script = ExtResource("5_lc3lf")
+
+[sub_resource type="Resource" id="Resource_lc3lf"]
+script = ExtResource("6_pyoko")
+height = 0.9
+top_kind = "accent"
+edge_kind = "trim"
+
+[sub_resource type="Resource" id="Resource_pyoko"]
+script = ExtResource("7_qhje0")
+along_x = PackedFloat32Array(0)
+along_z = PackedFloat32Array(0)
+width = 0.08
+height = 0.012
+kind = "accent"
+
+[sub_resource type="Resource" id="Resource_qhje0"]
+script = ExtResource("8_skhh1")
+lowpass_hz = 6000.0
+reverb = 0.3
+
+[sub_resource type="Resource" id="Resource_skhh1"]
+script = ExtResource("10_136jp")
+
+[sub_resource type="Resource" id="Resource_m77pm"]
+script = ExtResource("11_2xt4f")
+y = 0.6
+height = 1.2
+depth = 0.05
+kind = "accent"
+
+[resource]
+script = ExtResource("9_m77pm")
+id = &"vinculo"
+display_name = "VÍNCULO"
+code = "C4"
+stratum = 3
+slot = 3
+wall_color = Color(0.07058824, 0.22745098, 0.18039216, 1)
+floor_color = Color(0.2901961, 0.050980393, 0.07450981, 1)
+accent_color = Color(0.47843137, 0.09411765, 0.13333334, 1)
+trim_color = Color(0.23529412, 1, 0.5882353, 1)
+light_color = Color(0.3529412, 1, 0.6666667, 1)
+fog_color = Color(0.023529412, 0.07058824, 0.050980393, 1)
+light_energy = 8.0
+light_y = 5.7
+flicker = "breathe"
+fog_begin = 6.0
+fog_height = -0.5
+fog_height_density = 0.2
+spot_angle = 48.0
+ambient = 0.07
+roughness = 0.7
+floor_roughness = 0.3
+grime_frequency = 0.1
+grime = 0.1
+height = 6.0
+floor_kit = SubResource("Resource_10u08")
+wall_kit = SubResource("Resource_skhh1")
+wall_props = Array[ExtResource("2_v4a73")]([SubResource("Resource_m77pm")])
+ceiling_kit = SubResource("Resource_dvlwo")
+ceiling_props = Array[ExtResource("2_v4a73")]([SubResource("Resource_v4a73"), SubResource("Resource_qj1ro")])
+floor_props = Array[ExtResource("2_v4a73")]([SubResource("Resource_lc3lf"), SubResource("Resource_pyoko")])
+music = "res://audio/music/carne.tres"
+music_fx = SubResource("Resource_qhje0")
+deep_fissures = 2.0

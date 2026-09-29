@@ -98,6 +98,9 @@ class_name WorldDef
 @export var entity_audio := true
 ## The scanner's maps come out mirrored left/right.
 @export var scanner_mirror := false
+## Multiplies the fissures leading deeper (the shallower ones stay as
+## they are): 2 = twice as many ways down.
+@export var deep_fissures := 1.0
 
 ## The kits in build order.
 func kits() -> Array[RoomKit]:

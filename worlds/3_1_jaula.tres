@@ -1,0 +1,64 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_mjgm2"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_jb2nb"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="3_pf2dp"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="4_3s04d"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="5_epqho"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="6_ts734"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="7_eckvf"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Bars.gd" id="8_ggcym"]
+
+[sub_resource type="Resource" id="Resource_mjgm2"]
+script = ExtResource("1_mjgm2")
+
+[sub_resource type="Resource" id="Resource_jb2nb"]
+script = ExtResource("3_pf2dp")
+size = Vector3(0.5, 0.2, 0.5)
+
+[sub_resource type="Resource" id="Resource_pf2dp"]
+script = ExtResource("4_3s04d")
+
+[sub_resource type="Resource" id="Resource_3s04d"]
+script = ExtResource("5_epqho")
+reverb = 0.3
+distortion = 0.15
+
+[sub_resource type="Resource" id="Resource_epqho"]
+script = ExtResource("7_eckvf")
+
+[sub_resource type="Resource" id="Resource_ts734"]
+script = ExtResource("8_ggcym")
+lines = Array[Vector4]([Vector4(-1.6, 1.6, -1.6, 4.75), Vector4(-4.75, 1.6, -1.6, 1.6), Vector4(1.6, -2.6, 1.6, -1.6), Vector4(1.6, -1.6, 4.75, -1.6), Vector4(0, 2.3, 0, 4.1), Vector4(-4.1, 0, -2.3, 0), Vector4(0, -4.1, 0, -2.3), Vector4(2.3, 0, 4.1, 0)])
+
+[resource]
+script = ExtResource("6_ts734")
+id = &"jaula"
+display_name = "JAULA"
+code = "C2"
+stratum = 3
+slot = 1
+wall_color = Color(0.42352942, 0.101960786, 0.13333334, 1)
+floor_color = Color(0.24313726, 0.05490196, 0.07450981, 1)
+accent_color = Color(0.5254902, 0.13333334, 0.17254902, 1)
+trim_color = Color(1, 0.1882353, 0.28235295, 1)
+light_color = Color(1, 0.22745098, 0.2901961, 1)
+fog_color = Color(0.101960786, 0.015686275, 0.023529412, 1)
+light_energy = 7.0
+light_y = 5.4
+flicker = "heartbeat"
+fog_begin = 6.0
+fog_height = -0.5
+fog_height_density = 0.2
+ambient = 0.16
+roughness = 0.7
+grime_frequency = 0.1
+grime = 0.1
+height = 6.0
+floor_kit = SubResource("Resource_pf2dp")
+wall_kit = SubResource("Resource_epqho")
+wall_props = Array[ExtResource("2_jb2nb")]([SubResource("Resource_ts734")])
+ceiling_kit = SubResource("Resource_mjgm2")
+ceiling_props = Array[ExtResource("2_jb2nb")]([SubResource("Resource_jb2nb")])
+music = "res://audio/music/carne.tres"
+music_fx = SubResource("Resource_3s04d")

@@ -1,0 +1,72 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_tngee"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_s2wkw"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="3_o6tqh"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="4_skynf"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorBlocks.gd" id="5_7hipw"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="6_l274b"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="7_jev6n"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="8_u1h5t"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Partitions.gd" id="9_s2wkw"]
+
+[sub_resource type="Resource" id="Resource_s2wkw"]
+script = ExtResource("1_tngee")
+
+[sub_resource type="Resource" id="Resource_o6tqh"]
+script = ExtResource("3_o6tqh")
+size = Vector3(0.6, 0.1, 0.6)
+
+[sub_resource type="Resource" id="Resource_skynf"]
+script = ExtResource("4_skynf")
+
+[sub_resource type="Resource" id="Resource_7hipw"]
+script = ExtResource("5_7hipw")
+positions = Array[Vector3]([Vector3(-4.1, 0, 4.1)])
+size = Vector3(1.2, 1.2, 1.2)
+
+[sub_resource type="Resource" id="Resource_l274b"]
+script = ExtResource("6_l274b")
+highpass_hz = 90.0
+reverb = 0.2
+
+[sub_resource type="Resource" id="Resource_jev6n"]
+script = ExtResource("8_u1h5t")
+
+[sub_resource type="Resource" id="Resource_u1h5t"]
+script = ExtResource("9_s2wkw")
+height = 3.4
+kind = "accent"
+
+[resource]
+script = ExtResource("7_jev6n")
+id = &"laberinto"
+display_name = "LABERINTO"
+code = "C3"
+stratum = 3
+slot = 2
+wall_color = Color(0.42352942, 0.101960786, 0.13333334, 1)
+floor_color = Color(0.24313726, 0.05490196, 0.07450981, 1)
+accent_color = Color(0.5254902, 0.13333334, 0.17254902, 1)
+trim_color = Color(1, 0.1882353, 0.28235295, 1)
+light_color = Color(1, 0.22745098, 0.2901961, 1)
+fog_color = Color(0.101960786, 0.015686275, 0.023529412, 1)
+light_energy = 5.0
+light_y = 4.7
+flicker = "heartbeat"
+fog_begin = 6.0
+fog_height = -0.5
+fog_height_density = 0.2
+ambient = 0.07
+roughness = 0.7
+grime_frequency = 0.1
+grime = 0.1
+height = 5.0
+floor_kit = SubResource("Resource_skynf")
+wall_kit = SubResource("Resource_jev6n")
+wall_props = Array[ExtResource("2_s2wkw")]([SubResource("Resource_u1h5t")])
+ceiling_kit = SubResource("Resource_s2wkw")
+ceiling_props = Array[ExtResource("2_s2wkw")]([SubResource("Resource_o6tqh")])
+floor_props = Array[ExtResource("2_s2wkw")]([SubResource("Resource_7hipw")])
+music = "res://audio/music/carne.tres"
+music_fx = SubResource("Resource_l274b")

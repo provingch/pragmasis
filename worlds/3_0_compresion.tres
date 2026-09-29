@@ -1,0 +1,89 @@
+[gd_resource type="Resource" script_class="WorldDef" load_steps=20 format=3]
+
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_dg248"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_ye064"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/CeilingFixture.gd" id="3_i2s3b"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorLines.gd" id="4_gveou"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/Ground.gd" id="5_daw6l"]
+[ext_resource type="Script" path="res://scripts/audio/MusicFX.gd" id="6_koo1e"]
+[ext_resource type="Script" path="res://scripts/worlds/WorldDef.gd" id="7_l1f2j"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallSolid.gd" id="8_01tj7"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/FloorBlocks.gd" id="9_r426u"]
+[ext_resource type="Script" path="res://scripts/worlds/kits/WallStrip.gd" id="10_qtj0u"]
+
+[sub_resource type="Resource" id="Resource_dg248"]
+script = ExtResource("1_dg248")
+
+[sub_resource type="Resource" id="Resource_ye064"]
+script = ExtResource("3_i2s3b")
+size = Vector3(0.8, 0.06, 0.3)
+
+[sub_resource type="Resource" id="Resource_i2s3b"]
+script = ExtResource("4_gveou")
+along_x = PackedFloat32Array(-1, 1)
+along_z = PackedFloat32Array(-1, 1)
+width = 0.25
+height = 0.2
+kind = "accent"
+from_ceiling = true
+
+[sub_resource type="Resource" id="Resource_gveou"]
+script = ExtResource("5_daw6l")
+
+[sub_resource type="Resource" id="Resource_daw6l"]
+script = ExtResource("6_koo1e")
+lowpass_hz = 1800.0
+volume_db = -2.0
+
+[sub_resource type="Resource" id="Resource_koo1e"]
+script = ExtResource("8_01tj7")
+
+[sub_resource type="Resource" id="Resource_l1f2j"]
+script = ExtResource("9_r426u")
+positions = Array[Vector3]([Vector3(-3.175, 0, 3.175)])
+size = Vector3(3.15, 0, 3.15)
+kind = "wall"
+
+[sub_resource type="Resource" id="Resource_01tj7"]
+script = ExtResource("9_r426u")
+positions = Array[Vector3]([Vector3(3.175, 0, -2.1)])
+size = Vector3(3.15, 0, 1)
+kind = "wall"
+
+[sub_resource type="Resource" id="Resource_r426u"]
+script = ExtResource("10_qtj0u")
+y = 0.05
+height = 0.1
+depth = 0.03
+
+[resource]
+script = ExtResource("7_l1f2j")
+id = &"compresion"
+display_name = "COMPRESIÓN"
+code = "C1"
+stratum = 3
+wall_color = Color(0.42352942, 0.101960786, 0.13333334, 1)
+floor_color = Color(0.24313726, 0.05490196, 0.07450981, 1)
+accent_color = Color(0.5254902, 0.13333334, 0.17254902, 1)
+trim_color = Color(1, 0.1882353, 0.28235295, 1)
+light_color = Color(1, 0.22745098, 0.2901961, 1)
+fog_color = Color(0.101960786, 0.015686275, 0.023529412, 1)
+light_energy = 3.0
+light_y = 3.1
+flicker = "heartbeat"
+fog_begin = 6.0
+fog_height = -0.5
+fog_height_density = 0.2
+ambient = 0.07
+roughness = 0.7
+grime_frequency = 0.1
+grime = 0.1
+height = 3.3
+floor_kit = SubResource("Resource_gveou")
+wall_kit = SubResource("Resource_koo1e")
+wall_props = Array[ExtResource("2_ye064")]([SubResource("Resource_l1f2j"), SubResource("Resource_01tj7"), SubResource("Resource_r426u")])
+ceiling_kit = SubResource("Resource_dg248")
+ceiling_props = Array[ExtResource("2_ye064")]([SubResource("Resource_ye064"), SubResource("Resource_i2s3b")])
+music = "res://audio/music/carne.tres"
+music_fx = SubResource("Resource_daw6l")
+stamina_drain = 1.2
