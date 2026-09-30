@@ -1,8 +1,14 @@
 extends WorldEnvironment
 
 ## Fog, ambient and glow in the active world's palette; blends on shift.
+## Height fog is measured from the floor the player is on (cubes stack).
 
 const BLEND_TIME := 0.9
+
+## The world's height fog level (blends on shift); the environment's is
+## this plus the player's floor.
+var fog_level := 0.0
+var _player: Node3D
 
 func _ready() -> void:
 	environment = Environment.new()
@@ -39,7 +45,7 @@ func _apply(w: int, time: float) -> void:
 	if time <= 0.0:
 		env.fog_light_color = s.fog_color
 		env.fog_depth_begin = s.fog_begin
-		env.fog_height = s.fog_height
+		fog_level = s.fog_height
 		env.fog_height_density = s.fog_height_density
 		env.background_color = s.fog_color
 		env.ambient_light_color = s.light_color
@@ -48,8 +54,16 @@ func _apply(w: int, time: float) -> void:
 	var tw := create_tween().set_parallel()
 	tw.tween_property(env, "fog_light_color", s.fog_color, time)
 	tw.tween_property(env, "fog_depth_begin", s.fog_begin, time)
-	tw.tween_property(env, "fog_height", s.fog_height, time)
+	tw.tween_property(self, "fog_level", s.fog_height, time)
 	tw.tween_property(env, "fog_height_density", s.fog_height_density, time)
 	tw.tween_property(env, "background_color", s.fog_color, time)
 	tw.tween_property(env, "ambient_light_color", s.light_color, time)
 	tw.tween_property(env, "ambient_light_energy", s.ambient, time)
+
+func _process(_delta: float) -> void:
+	var floor_y := 0.0
+	if not is_instance_valid(_player):
+		_player = get_tree().get_first_node_in_group("player")
+	if is_instance_valid(_player):
+		floor_y = RoomGenerator.cell_of(_player.global_position).y * Room.CELL_H
+	environment.fog_height = fog_level + floor_y
