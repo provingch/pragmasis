@@ -14,6 +14,10 @@ class_name Monster
 ## it loses them and folds away early. After the sequence clock runs out
 ## (collapse) it hunts forever, faster, and follows the player across
 ## layers.
+##
+## Floors don't stop it either: it drifts to the player's height (smoothly,
+## VERTICAL_SPEED) and catches by 3D distance, so a platform or another
+## storey is no refuge.
 
 enum State { IDLE, CHASE }
 
@@ -34,6 +38,11 @@ const COLLAPSE_SPEED := 1.2
 const FOLLOW_DELAY := 3.0
 const PHASE_SPIN_SPEED := 1.5
 const HUNT_COLOR := Color(1.0, 0.12, 0.1)
+## Catches when its centre is this close to the player's (both bodies'
+## origins sit at their middles).
+const CATCH_RADIUS := 1.0
+## Metres per second it rises or sinks toward the player's height, eased in.
+const VERTICAL_SPEED := 4.0
 
 var state: State = State.IDLE
 var entity_w := 0
@@ -46,7 +55,6 @@ var _follow_t := 0.0
 var _phase_angle := 0.0
 var _player: Player
 
-@onready var catch_area: Area3D = $CatchArea
 @onready var tesseract: Tesseract = $Tesseract
 @onready var core: MeshInstance3D = $Core
 @onready var glow: OmniLight3D = $Glow
@@ -59,7 +67,6 @@ func _ready() -> void:
 	add_to_group("monster")
 	visible = false
 	_player = get_tree().get_first_node_in_group("player") as Player
-	catch_area.body_entered.connect(_on_catch_area_body_entered)
 	GameManager.collapsed.connect(_on_collapse)
 	GameManager.sequence_completed.connect(func(_done: int) -> void:
 		if state == State.CHASE:
@@ -104,7 +111,6 @@ func lose_track() -> void:
 func _begin_idle() -> void:
 	state = State.IDLE
 	set_physics_process(false)
-	catch_area.monitoring = false
 	entity_w = Worlds.ids().pick_random()
 	_spawn_progress = 0.0
 	_omened = false
@@ -122,7 +128,6 @@ func _activate() -> void:
 	state = State.CHASE
 	_chase_left = CHASE_TIME
 	set_physics_process(true)
-	catch_area.monitoring = true
 	AudioManager.start_chase()
 	AudioManager.play_sfx(&"monster")
 	# Manifest: unfolds out of nothing.
@@ -184,10 +189,15 @@ func _physics_process(_delta: float) -> void:
 	if GameManager.is_collapsed:
 		speed *= COLLAPSE_SPEED
 	var to_player := _player.global_position - global_position
+	var rise := to_player.y
 	to_player.y = 0.0
 	# Lost them in a hideout: drifts away, searching.
 	velocity = to_player.normalized() * (speed if not _player.hidden else -speed * 0.3)
+	velocity.y = clampf(rise * 2.0, -VERTICAL_SPEED, VERTICAL_SPEED)
 	move_and_slide()
+	if not _player.hidden and entity_w == DimensionState.player_w \
+			and global_position.distance_to(_player.global_position) < CATCH_RADIUS:
+		GameManager.trigger_game_over()
 
 func _omen() -> void:
 	_omened = true
@@ -200,7 +210,3 @@ func _omen() -> void:
 func _on_collapse() -> void:
 	if state == State.IDLE:
 		_activate()
-
-func _on_catch_area_body_entered(body: Node3D) -> void:
-	if body.is_in_group("player") and entity_w == DimensionState.player_w:
-		GameManager.trigger_game_over()
