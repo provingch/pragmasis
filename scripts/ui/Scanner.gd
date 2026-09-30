@@ -65,7 +65,7 @@ func _draw_compact() -> void:
 	var w := DimensionState.player_w
 	var p := Vector2(24, size.y - 44)
 	var blink := 1.0 if fmod(_t, 0.5) < 0.25 else 0.25
-	_text(p, "%s // %s" % [Worlds.def(w).code, Worlds.def(w).display_name], FG, 13)
+	_text(p, "%s // %s  ·  PISO %+d" % [Worlds.def(w).code, Worlds.def(w).display_name, _player_cell().y], FG, 13)
 	_text(p + Vector2(0, 18), "[TAB] ESCÁNER DE FASE", DIM, 11)
 	if _entity_hunting_here():
 		_text(p + Vector2(0, -20), "■ ENTIDAD EN TU FASE", Color(RED, blink), 11)
@@ -190,6 +190,7 @@ func _draw_side() -> void:
 	var cell := _player_cell()
 	var rows := [
 		"CELDA   X%+d Z%+d" % [cell.x, cell.z],
+		"PISO    %+d" % cell.y,
 		"ESTRATO %d / %d" % [Worlds.stratum(w) + 1, Worlds.deepest_stratum() + 1],
 		"SEÑAL   %s" % _noise_string(6),
 	]
@@ -199,15 +200,17 @@ func _draw_side() -> void:
 	var aw := RoomGenerator.anchor_w
 	if aw >= 0:
 		var to := RoomGenerator.anchor_cell - cell
-		_text(Vector2(16, HEADER_H + 188), "ANCLA   ΔX%+d ΔZ%+d" % [-to.x if _mirrored() else to.x, to.z], GREEN, 11)
+		var floors := "EN TU PISO" if to.y == 0 else "%s %d PISO%s" % ["↑" if to.y > 0 else "↓", absi(to.y), "S" if absi(to.y) > 1 else ""]
+		_text(Vector2(16, HEADER_H + 200), "ANCLA   ΔX%+d ΔZ%+d" % [-to.x if _mirrored() else to.x, to.z], GREEN, 11)
+		_text(Vector2(16, HEADER_H + 216), floors, GREEN if to.y == 0 else FG, 10)
 		var where := "EN TU FASE" if aw == w else "EN " + Worlds.def(aw).tag()
-		_text(Vector2(16, HEADER_H + 204), where, GREEN if aw == w else FG, 10)
+		_text(Vector2(16, HEADER_H + 230), where, GREEN if aw == w else FG, 10)
 	# Threat meter: this world's intrinsic hostility, 5 blocks = x2.0.
 	var threat := Worlds.def(w).threat
 	var blocks := clampi(roundi(threat * 2.5), 1, 5)
-	_text(Vector2(16, HEADER_H + 230), "AMENAZA x%.1f" % threat, RED if threat > 1.0 else FG, 11)
+	_text(Vector2(16, HEADER_H + 250), "AMENAZA x%.1f" % threat, RED if threat > 1.0 else FG, 11)
 	for i in 5:
-		var r := Rect2(16 + i * 14, HEADER_H + 238, 10, 8)
+		var r := Rect2(16 + i * 14, HEADER_H + 258, 10, 8)
 		if i < blocks:
 			draw_rect(r, RED if threat > 1.0 else FG)
 		else:
@@ -264,10 +267,23 @@ func _draw_layer_contents(p0: Vector2, w: int, here: bool) -> void:
 			var exits := RoomGenerator.exits_for(at)
 			var c := center + Vector2(dx, dz) * CELL
 			var h := CELL / 2.0
-			_draw_wall(c + Vector2(-h, -h), c + Vector2(h, -h), exits[Room.Exit.NORTH], col)
-			_draw_wall(c + Vector2(-h, h), c + Vector2(h, h), exits[Room.Exit.SOUTH], col)
-			_draw_wall(c + Vector2(h, -h), c + Vector2(h, h), exits[Room.Exit.EAST], col)
-			_draw_wall(c + Vector2(-h, -h), c + Vector2(-h, h), exits[Room.Exit.WEST], col)
+			if RoomGenerator.is_void(at, w):
+				# Void: no walls, only its bridges out.
+				for i in 4:
+					if exits[i]:
+						var s := Vector2([0, 0, 1, -1][i], [-1, 1, 0, 0][i])
+						draw_line(c + s * 3.0, c + s * h, Color(col, 0.6), 1.0)
+				draw_rect(Rect2(c - Vector2(3, 3), Vector2(6, 6)), Color(col, 0.6), false, 1.0)
+			else:
+				_draw_wall(c + Vector2(-h, -h), c + Vector2(h, -h), exits[Room.Exit.NORTH], col)
+				_draw_wall(c + Vector2(-h, h), c + Vector2(h, h), exits[Room.Exit.SOUTH], col)
+				_draw_wall(c + Vector2(h, -h), c + Vector2(h, h), exits[Room.Exit.EAST], col)
+				_draw_wall(c + Vector2(-h, -h), c + Vector2(-h, h), exits[Room.Exit.WEST], col)
+			# Stairs to the floor above / below: in FREE (-x +z: bottom left).
+			var up := RoomGenerator.up_open(at, w)
+			var down := RoomGenerator.down_open(at, w)
+			if up or down:
+				_text(c + Vector2(-h + 3, h - 3), "↕" if up and down else ("↑" if up else "↓"), col, 10)
 			var link := RoomGenerator.link_of(at, w)
 			if link.y == 1: # fissure: a crack
 				var k := c + Vector2(-h + 7, -h + 4)
@@ -276,8 +292,9 @@ func _draw_layer_contents(p0: Vector2, w: int, here: bool) -> void:
 				_text(c + Vector2(-h + 4, -h + 12), "▼" if link.x > w else "▲", col, 9)
 			if RoomGenerator.has_hideout(at, w): # its corner: +x (right), -z (up)
 				draw_rect(Rect2(c + Vector2(h - 9, -h + 3), Vector2(6, 6)), col, false, 1.0)
-			if w == RoomGenerator.anchor_w and at == RoomGenerator.anchor_cell:
-				draw_rect(Rect2(c - Vector2(4, 4), Vector2(8, 8)), GREEN)
+			if w == RoomGenerator.anchor_w and Vector2i(at.x, at.z) == Vector2i(RoomGenerator.anchor_cell.x, RoomGenerator.anchor_cell.z):
+				# On this floor: solid; above or below: an outline.
+				draw_rect(Rect2(c - Vector2(4, 4), Vector2(8, 8)), GREEN, at == RoomGenerator.anchor_cell, 1.5)
 	for a in range(1, n):
 		for b in range(1, n):
 			var k := p0 + Vector2(a, b) * CELL

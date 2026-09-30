@@ -96,6 +96,15 @@ func _ready() -> void:
 func _flash_shadow() -> void:
 	_flash.shadow_enabled = Settings.shadow_radius >= 0
 
+## The floor (the cube's y in the grid) you're on.
+func floor_index() -> int:
+	return RoomGenerator.cell_of(global_position).y
+
+## How high your feet are over your cube's floor (m): up a platform or a
+## spiral, down a pit (negative).
+func height_in_cube() -> float:
+	return global_position.y - 0.9 - floor_index() * Room.CELL_H
+
 ## Whether the world you're in hands you a flashlight.
 func has_flashlight() -> bool:
 	return Worlds.def(DimensionState.player_w).flashlight

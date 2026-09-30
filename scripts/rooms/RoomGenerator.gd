@@ -43,9 +43,11 @@ const HIDEOUT_CHANCE := 1.0 / 6.0
 const BEACON_BLOCK := 4
 const ANCHOR_MIN := 8.0
 const ANCHOR_MAX := 12.0
+## Floors up or down the anchor may be from where the sequence starts.
+const ANCHOR_FLOORS := 3
 ## A candidate anchor is kept only if the maze reaches it within this many
 ## rooms (searching a box around start and target, ANCHOR_MARGIN wider).
-const ANCHOR_MAX_PATH := 40
+const ANCHOR_MAX_PATH := 50
 const ANCHOR_MARGIN := 6
 ## Rooms within this (Chebyshev) distance are built the moment they're
 ## needed; farther ones wait in line, nearest first. 0: only the one you're
@@ -425,9 +427,10 @@ func is_lit(c: Vector3i, w: int) -> bool:
 	var chance := Worlds.def(w).light_chance
 	return chance >= 1.0 or _rand(c, w, Salt.LIGHT) < chance
 
-## Anchor 8-12 rooms from `from`, in a world of `stratum_index`, with a
-## maze path to it in that world (candidates are tried in hash order until
-## one has). Its world: preferably one not visited this run and on another
+## Anchor 8-12 rooms from `from` and up to ANCHOR_FLOORS floors up or
+## down, in a world of `stratum_index`, with a maze path to it in that
+## world, stairs included (candidates are tried in hash order until one
+## has; the last ones stay on the same floor). Its world: preferably one not visited this run and on another
 ## slot than the player's (so getting there takes more than a straight drop).
 func place_anchor(from: Vector3i, stratum_index: int) -> void:
 	var choices := Worlds.in_stratum(stratum_index)
@@ -439,10 +442,11 @@ func place_anchor(from: Vector3i, stratum_index: int) -> void:
 			break
 	anchor_w = choices[int(_rand(from, 0, Salt.ANCHOR) * choices.size())]
 	anchor_cell = from
-	for k in 64:
+	for k in 96:
 		var a := _rand(from, k, Salt.ANCHOR) * TAU
 		var d := lerpf(ANCHOR_MIN, ANCHOR_MAX, _rand(from, k + 1000, Salt.ANCHOR))
-		var target := from + Vector3i(roundi(cos(a) * d), 0, roundi(sin(a) * d))
+		var dy := 0 if k >= 64 else roundi(lerpf(-ANCHOR_FLOORS - 0.49, ANCHOR_FLOORS + 0.49, _rand(from, k + 2000, Salt.ANCHOR)))
+		var target := from + Vector3i(roundi(cos(a) * d), dy, roundi(sin(a) * d))
 		if path_length(from, target, anchor_w) >= 0:
 			anchor_cell = target
 			break
@@ -451,8 +455,8 @@ func place_anchor(from: Vector3i, stratum_index: int) -> void:
 ## stairs, or -1 if it takes more than ANCHOR_MAX_PATH or leaves the
 ## search box.
 func path_length(a: Vector3i, b: Vector3i, w: int) -> int:
-	var lo := Vector3i(mini(a.x, b.x), mini(a.y, b.y), mini(a.z, b.z)) - Vector3i(ANCHOR_MARGIN, 3, ANCHOR_MARGIN)
-	var hi := Vector3i(maxi(a.x, b.x), maxi(a.y, b.y), maxi(a.z, b.z)) + Vector3i(ANCHOR_MARGIN, 3, ANCHOR_MARGIN)
+	var lo := Vector3i(mini(a.x, b.x), mini(a.y, b.y), mini(a.z, b.z)) - Vector3i(ANCHOR_MARGIN, 2, ANCHOR_MARGIN)
+	var hi := Vector3i(maxi(a.x, b.x), maxi(a.y, b.y), maxi(a.z, b.z)) + Vector3i(ANCHOR_MARGIN, 2, ANCHOR_MARGIN)
 	var dist := {a: 0}
 	var queue: Array[Vector3i] = [a]
 	while not queue.is_empty():
