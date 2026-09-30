@@ -1,8 +1,8 @@
 extends Node3D
 class_name Room
 
-## Modular 10x10 m room, built procedurally so RoomGenerator can reuse one
-## scene. The maze (which walls open into a 3 m door) is the same in every
+## Modular 10x10 m room, one cube (CELL_H tall) of an unbounded 3D grid,
+## built procedurally so RoomGenerator can reuse one scene. The maze (which walls open into a 3 m door) is the same in every
 ## world; the world's WorldDef builds its own architecture around it from
 ## kits (see RoomKit), plus its materials, light and flicker.
 ##
@@ -17,6 +17,9 @@ class_name Room
 ## fixture mesh carrying the room's own flickering material.
 
 const ROOM_SIZE := 10.0
+## A cube's height: floors are this far apart, for every world (a world's
+## ceiling sits somewhere inside its cube).
+const CELL_H := 10.0
 const WALL_THICKNESS := 0.5
 const DOOR_WIDTH := 3.0
 const PORTAL_INSET := 1.5
@@ -54,7 +57,14 @@ enum Exit { NORTH, SOUTH, EAST, WEST }
 @export var link_target := -1
 @export var link_fissure := false
 @export var w := 0
+var cell := Vector3i.ZERO
 var variant := 0
+## Shape flags (see shape()): spiral up / shaft from below, a void cell,
+## faces open to the void.
+var up := false
+var down := false
+var void_cell := false
+var open: Array[bool] = [false, false, false, false, false]
 var hideout := false
 var has_anchor := false
 ## Has its light (see WorldDef.light_chance); a dark room has none at all.
@@ -89,7 +99,7 @@ var _disturb_t := 0.0
 func _ready() -> void:
 	_def = Worlds.def(w)
 	_seed = randf() * 100.0
-	var built := geometry(w, exits, variant)
+	var built := geometry(w, exits, variant, shape())
 	_zones = built.zones
 	_mesh = _instance(built.mesh)
 	_fixture_mat = StandardMaterial3D.new()
@@ -114,14 +124,14 @@ func _ready() -> void:
 		cs.shape = _shape(c[0])
 		cs.transform = Transform3D(c[2] if c.size() > 2 else Basis.IDENTITY, c[1])
 		(bars if c.size() > 3 and c[3] else body).add_child(cs)
-	if lit:
+	if lit and not void_cell:
 		_build_light()
 	else:
 		set_process(false)
 	if has_anchor:
 		add_child(ANCHOR_SCENE.instantiate())
 	if _def.guide_lines:
-		var to := RoomGenerator.guide(RoomGenerator.cell_of(position), w)
+		var to := RoomGenerator.guide(cell, w)
 		if to != Vector2.ZERO:
 			_instance(guide_mesh(w, to))
 	if link_target >= 0:
@@ -233,17 +243,39 @@ func _build_light() -> void:
 
 # --- geometry cache -------------------------------------------------------------
 
-## Shared geometry for a room of world `lw` with these exits and variant,
-## built on first request by running the world's kits.
-static func geometry(lw: int, room_exits: Array[bool], v: int) -> Dictionary:
+## This room's shape flags, as one int (part of the geometry's cache key):
+## 1 spiral up, 2 shaft from below, 4 void cell, 8.. open faces (N, S, E,
+## W, ceiling), 256/512 a void cell's portal pad (+x +z / -x -z).
+func shape() -> int:
+	var s := int(up) | int(down) << 1 | int(void_cell) << 2
+	for i in 5:
+		s |= int(open[i]) << (3 + i)
+	if void_cell and link_target >= 0:
+		s |= 256 if link_target > w else 512
+	return s
+
+## Shared geometry for a room of world `lw` with these exits, variant and
+## shape, built on first request: a void cell's bridges, or the world's
+## kits (plus the spiral, and rails where faces are open).
+static func geometry(lw: int, room_exits: Array[bool], v: int, s := 0) -> Dictionary:
 	var bits := 0
 	for i in 4:
 		bits |= int(room_exits[i]) << i
-	var key := "%d:%d:%d" % [lw, bits, v]
+	var key := "%d:%d:%d:%d" % [lw, bits, v, s]
 	if not _built.has(key):
 		var b := RoomBuilder.new(lw, room_exits, v)
-		for kit in b.world.kits():
-			kit.build(b)
+		b.up = s & 1 != 0
+		b.down = s & 2 != 0
+		for i in 5:
+			b.open[i] = s & (8 << i) != 0
+		if s & 4 != 0:
+			b.void_cell(1 if s & 256 else (-1 if s & 512 else 0))
+		else:
+			for kit in b.world.kits():
+				kit.build(b)
+			b.open_rails()
+		if b.up:
+			b.spiral()
 		_built[key] = b.bake()
 	return _built[key]
 

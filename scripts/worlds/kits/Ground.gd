@@ -9,6 +9,9 @@ class_name Ground
 ## room's, like the maze above. Without rails, stairs in FREE lead back up
 ## (so depth is what they can climb); with rails the drop is fenced off and
 ## may be as deep as you like, its floor just seen far below.
+##
+## A cube with a spiral shaft keeps its floor level in FREE (no pit, no
+## stairs there), opened for the stairs coming up from below (b.down).
 
 enum Mode { FLAT, PIT, UNDERCUT }
 
@@ -27,13 +30,24 @@ enum Mode { FLAT, PIT, UNDERCUT }
 @export var lip_kind := ""
 
 func build(b: RoomBuilder) -> void:
+	if b.down:
+		b.hole_rails()
 	match mode:
 		Mode.FLAT:
-			b.box(Vector3(b.ROOM_SIZE, 0.5, b.ROOM_SIZE), Vector3(0, -0.25, 0), kind, true)
+			_flat(b)
 		Mode.PIT:
-			_pit(b)
+			if b.shaft():
+				_flat(b)
+			else:
+				_pit(b)
 		Mode.UNDERCUT:
 			_undercut(b)
+
+## The whole floor at 0, but the shaft's hole.
+func _flat(b: RoomBuilder) -> void:
+	var half := b.ROOM_SIZE / 2.0
+	for r in b.cover(Rect2(-half, -half, b.ROOM_SIZE, b.ROOM_SIZE), b.shaft_hole() if b.down else []):
+		_slab(b, r, 0.5)
 
 func _pit(b: RoomBuilder) -> void:
 	var f := b.FREE
@@ -52,7 +66,9 @@ func _pit(b: RoomBuilder) -> void:
 func _undercut(b: RoomBuilder) -> void:
 	var half := b.ROOM_SIZE / 2.0
 	var w := b.WALK_HALF * 2.0
-	b.box(Vector3(b.ROOM_SIZE, 0.5, b.ROOM_SIZE), Vector3(0, -depth - 0.25, 0), lower_kind, true)
+	for r in b.cover(Rect2(-half, -half, b.ROOM_SIZE, b.ROOM_SIZE), [b.FREE] if b.down else []):
+		var c := r.get_center()
+		b.box(Vector3(r.size.x, 0.5, r.size.y), Vector3(c.x, -depth - 0.25, c.y), lower_kind, true)
 	b.box(Vector3(b.ROOM_SIZE, bridge, w), Vector3(0, -bridge / 2.0, 0), kind, true)
 	b.box(Vector3(w, bridge, b.ROOM_SIZE), Vector3(0, -bridge / 2.0, 0), kind, true)
 	for pad in b.PADS:
@@ -72,11 +88,13 @@ func _undercut(b: RoomBuilder) -> void:
 		[Vector2(s.position.x, s.end.y), Vector2(half, s.end.y)],
 		[Vector2(s.position.x, s.position.y), Vector2(half, s.position.y)],
 	]
+	if b.shaft():
+		edges = edges.slice(2) # FREE's edges: the spiral fences those
 	_lips(b, edges)
 	if rails:
 		for e: Array in edges:
 			_rail(b, e[0], e[1])
-	else:
+	elif not b.shaft():
 		b.free_stairs(0.0, -depth, stair_kind)
 		# Then on under the crossing: headroom under the bridges.
 		var r := b.routes[-1]

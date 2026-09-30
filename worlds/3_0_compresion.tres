@@ -84,6 +84,7 @@ wall_kit = SubResource("Resource_koo1e")
 wall_props = Array[ExtResource("2_ye064")]([SubResource("Resource_l1f2j"), SubResource("Resource_01tj7"), SubResource("Resource_r426u")])
 ceiling_kit = SubResource("Resource_dg248")
 ceiling_props = Array[ExtResource("2_ye064")]([SubResource("Resource_ye064"), SubResource("Resource_i2s3b")])
+vertical = 0.05
 music = "res://audio/music/carne.tres"
 music_fx = SubResource("Resource_daw6l")
 stamina_drain = 1.2

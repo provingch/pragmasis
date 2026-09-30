@@ -8,7 +8,7 @@
 [ext_resource type="PackedScene" path="res://scenes/player/PlayerAvatar.tscn" id="6_avatar"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_body"]
-radius = 0.4
+radius = 0.35
 height = 1.8
 
 [node name="Player" type="CharacterBody3D"]

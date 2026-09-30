@@ -60,7 +60,8 @@ class_name WorldDef
 @export_range(0.0, 1.0) var grime := 0.28
 
 @export_group("Arquitectura")
-## Ceiling height (m).
+## Ceiling height (m), inside the cube (Room.CELL_H); leave room under the
+## next floor for pits sunk into it.
 @export var height := 4.0
 @export var floor_kit: RoomKit
 @export var wall_kit: RoomKit
@@ -70,6 +71,16 @@ class_name WorldDef
 @export var floor_props: Array[RoomKit] = []
 ## Scales how many random props kits place (1 = as authored).
 @export var prop_density := 1.0
+
+@export_group("Cubo")
+## Share of cubes joined to the one above by spiral stairs.
+@export_range(0.0, 1.0) var vertical := 0.12
+## Share of cells that are void: no room, only bridges in the air between
+## their doors.
+@export_range(0.0, 1.0) var void_chance := 0.0
+## Share of a room's faces toward a void cell (walls without a door, the
+## ceiling) left open, railed.
+@export_range(0.0, 1.0) var open_chance := 0.0
 
 @export_group("Música")
 ## A MusicTrack (.tres): stream + loop point. Several worlds may share one.

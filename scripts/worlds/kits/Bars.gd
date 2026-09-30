@@ -23,6 +23,8 @@ func build(b: RoomBuilder) -> void:
 		var c := (a + z) / 2.0
 		var along_x := absf(z.x - a.x) > absf(z.y - a.y)
 		var length := (z - a).length()
+		if b.shaft() and Rect2(a, Vector2.ZERO).expand(z).grow(0.2).intersects(b.FREE):
+			continue # would fence off the spiral's entry
 		var n := maxi(roundi(length / spacing), 1)
 		for i in n + 1:
 			var p := a.lerp(z, float(i) / n)

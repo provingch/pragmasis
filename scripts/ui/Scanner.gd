@@ -189,7 +189,7 @@ func _draw_side() -> void:
 	_text(Vector2(16, HEADER_H + 110), Worlds.def(w).display_name, FG, 14)
 	var cell := _player_cell()
 	var rows := [
-		"CELDA   X%+d Z%+d" % [cell.x, cell.y],
+		"CELDA   X%+d Z%+d" % [cell.x, cell.z],
 		"ESTRATO %d / %d" % [Worlds.stratum(w) + 1, Worlds.deepest_stratum() + 1],
 		"SEÑAL   %s" % _noise_string(6),
 	]
@@ -199,7 +199,7 @@ func _draw_side() -> void:
 	var aw := RoomGenerator.anchor_w
 	if aw >= 0:
 		var to := RoomGenerator.anchor_cell - cell
-		_text(Vector2(16, HEADER_H + 188), "ANCLA   ΔX%+d ΔZ%+d" % [-to.x if _mirrored() else to.x, to.y], GREEN, 11)
+		_text(Vector2(16, HEADER_H + 188), "ANCLA   ΔX%+d ΔZ%+d" % [-to.x if _mirrored() else to.x, to.z], GREEN, 11)
 		var where := "EN TU FASE" if aw == w else "EN " + Worlds.def(aw).tag()
 		_text(Vector2(16, HEADER_H + 204), where, GREEN if aw == w else FG, 10)
 	# Threat meter: this world's intrinsic hostility, 5 blocks = x2.0.
@@ -259,23 +259,24 @@ func _draw_layer_contents(p0: Vector2, w: int, here: bool) -> void:
 	for dx in range(-r, r + 1):
 		for dz in range(-r, r + 1):
 			var x := cell.x + dx
-			var z := cell.y + dz
-			var exits := RoomGenerator.exits_for(x, z)
+			var z := cell.z + dz
+			var at := Vector3i(x, cell.y, z)
+			var exits := RoomGenerator.exits_for(at)
 			var c := center + Vector2(dx, dz) * CELL
 			var h := CELL / 2.0
 			_draw_wall(c + Vector2(-h, -h), c + Vector2(h, -h), exits[Room.Exit.NORTH], col)
 			_draw_wall(c + Vector2(-h, h), c + Vector2(h, h), exits[Room.Exit.SOUTH], col)
 			_draw_wall(c + Vector2(h, -h), c + Vector2(h, h), exits[Room.Exit.EAST], col)
 			_draw_wall(c + Vector2(-h, -h), c + Vector2(-h, h), exits[Room.Exit.WEST], col)
-			var link := RoomGenerator.link_of(x, z, w)
+			var link := RoomGenerator.link_of(at, w)
 			if link.y == 1: # fissure: a crack
 				var k := c + Vector2(-h + 7, -h + 4)
 				draw_polyline(PackedVector2Array([k, k + Vector2(3, 3), k + Vector2(-1, 6), k + Vector2(2, 10)]), col, 1.5)
 			elif link.x >= 0:
 				_text(c + Vector2(-h + 4, -h + 12), "▼" if link.x > w else "▲", col, 9)
-			if RoomGenerator.has_hideout(x, z, w): # its corner: +x (right), -z (up)
+			if RoomGenerator.has_hideout(at, w): # its corner: +x (right), -z (up)
 				draw_rect(Rect2(c + Vector2(h - 9, -h + 3), Vector2(6, 6)), col, false, 1.0)
-			if w == RoomGenerator.anchor_w and Vector2i(x, z) == RoomGenerator.anchor_cell:
+			if w == RoomGenerator.anchor_w and at == RoomGenerator.anchor_cell:
 				draw_rect(Rect2(c - Vector2(4, 4), Vector2(8, 8)), GREEN)
 	for a in range(1, n):
 		for b in range(1, n):
@@ -284,8 +285,8 @@ func _draw_layer_contents(p0: Vector2, w: int, here: bool) -> void:
 			draw_line(k - Vector2(0, 3), k + Vector2(0, 3), FAINT, 1.0)
 
 	# Panel coordinates are relative to the player's cell centre.
-	var origin := center - Vector2(cell) * CELL
-	var to := Vector2(RoomGenerator.anchor_cell - cell)
+	var origin := center - Vector2(cell.x, cell.z) * CELL
+	var to := Vector2(RoomGenerator.anchor_cell.x - cell.x, RoomGenerator.anchor_cell.z - cell.z)
 	if here and RoomGenerator.anchor_w >= 0 and to.length() > 0.0:
 		# Arrow toward the anchor, from the edge of the window.
 		var dir := to.normalized()
@@ -336,7 +337,7 @@ func _draw_footer() -> void:
 
 	# Crossing verdict for the portal in *this* room.
 	var c := _player_cell()
-	var link := RoomGenerator.link_of(c.x, c.y, pw)
+	var link := RoomGenerator.link_of(c, pw)
 	if link.x < 0:
 		_text(Vector2(14, y + 26), "CRUCE   [ SIN PORTAL ]", DIM, 11)
 		return
@@ -399,10 +400,10 @@ func _entity_hunting_here() -> bool:
 	var m := _monster()
 	return m != null and m.is_hunting() and m.entity_w == DimensionState.player_w
 
-func _player_cell() -> Vector2i:
+func _player_cell() -> Vector3i:
 	var player := get_tree().get_first_node_in_group("player") as Node3D
 	if player == null:
-		return Vector2i.ZERO
+		return Vector3i.ZERO
 	return RoomGenerator.cell_of(player.global_position)
 
 ## Wall segment; an open one keeps only its two ends, leaving the door gap.

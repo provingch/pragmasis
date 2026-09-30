@@ -16,6 +16,8 @@ class_name Platform
 @export var tower := 0.0
 
 func build(b: RoomBuilder) -> void:
+	if b.shaft():
+		return # FREE holds the spiral
 	var f := b.FREE
 	# The platform: FREE's middle, and the far landing beside it.
 	var x_land := f.position.x + b.FLIGHT

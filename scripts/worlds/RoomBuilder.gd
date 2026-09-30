@@ -10,11 +10,17 @@ class_name RoomBuilder
 ## the player's speed.
 ##
 ## Levels: the walkway plus, both portal pads and the hideout pad are always
-## floor at y = 0 and clear of anything solid (portals drop you at the same
-## x/z at y = 1, in any world). Everything off them (FREE, the -x +z
-## quadrant, and STRIP, beside the hideout) may rise or sink, reached by
-## stairs: the player never jumps, so every height change is a ramp under
-## 45 degrees (stair), and nothing reachable is ever a dead drop.
+## floor at y = 0 and clear of anything solid. Everything off them (FREE,
+## the -x +z quadrant, and STRIP, beside the hideout) may rise or sink,
+## reached by stairs: the player never jumps, so every height change is a
+## ramp under 45 degrees (stair), and nothing reachable is ever a dead drop.
+##
+## The room is one cube of a 3D grid (Room.CELL_H tall). A cube joined to
+## the one above (`up`) holds the spiral stairs in FREE (spiral); the one
+## above sees them as a railed shaft in its floor (`down`, hole_rails).
+## Either way FREE is the shaft's and kits leave it alone (shaft()). Faces
+## toward a void cell may be open (`open`: walls without a door, the
+## ceiling), railed; a void cell itself is only bridges (void_cell).
 
 const ROOM_SIZE := Room.ROOM_SIZE
 const WALL_THICKNESS := Room.WALL_THICKNESS
@@ -38,11 +44,25 @@ const STRIP := Rect2(WALK_HALF, -2.6, INNER - WALK_HALF, 2.6 - WALK_HALF)
 ## climbs up to 45) and the height of each visual step.
 const MAX_SLOPE := 0.8
 const STEP_RISE := 0.22
+## Railings: height (the player never jumps: this stops anyone).
+const RAIL := 1.1
+## The spiral: ring width, laps per cube, and the corner by the walkway
+## crossing where it's entered at every floor.
+const SPIRAL_RING := 1.0
+const SPIRAL_LAPS := 3
+const SPIRAL_ENTRY := Rect2(-WALK_HALF - SPIRAL_RING, WALK_HALF, SPIRAL_RING, SPIRAL_RING)
+## What the entry is open for, at the foot (you walk in under this).
+const SPIRAL_DOOR := 2.3
 
 var world: WorldDef
 var w: int
 var exits: Array[bool]
 var variant: int
+## Joined to the cube above / below (spiral stairs in FREE).
+var up := false
+var down := false
+## [north, south, east, west, ceiling]: faces open to the void.
+var open: Array[bool] = [false, false, false, false, false]
 var rng := RandomNumberGenerator.new()
 ## Ceiling height.
 var height: float
@@ -144,6 +164,193 @@ func free_stairs(y_walk: float, y_far: float, kind: String) -> void:
 	stair(Vector3(x2, y_mid, z_turn), Vector3(x2, y_far, z_end), FLIGHT, kind, base)
 	route([Vector3(-0.8, 0, z1), Vector3(f.end.x - 0.3, NAN, z1), Vector3(x2, y_mid, z1), Vector3(x2, NAN, (z_turn + z_end) / 2.0), Vector3(x2, y_far, z_end - 0.5), Vector3(f.get_center().x, y_far, f.position.y + 0.7)])
 
+## FREE belongs to a spiral shaft here: kits keep out of it.
+func shaft() -> bool:
+	return up or down
+
+## A bar from p0 to p1 (any direction), `t` thick.
+func bar(p0: Vector3, p1: Vector3, t: float, kind: String, collide := false) -> void:
+	var x := (p1 - p0).normalized()
+	var helper := Vector3.UP if absf(x.y) < 0.9 else Vector3.RIGHT
+	var z := x.cross(helper).normalized()
+	box(Vector3((p1 - p0).length(), t, t), (p0 + p1) / 2.0, kind, collide, Basis(x, z.cross(x), z))
+
+## Railing along the floor from a to b (x, z) at height y: posts, a top
+## rail, and a wall of collision RAIL tall.
+func rail(a: Vector2, b: Vector2, y := 0.0, kind := "edge") -> void:
+	var l := (b - a).length()
+	if l < 0.05:
+		return
+	var c := (a + b) / 2.0
+	var along_x := absf(b.x - a.x) > absf(b.y - a.y)
+	box(Vector3(l, RAIL, 0.1) if along_x else Vector3(0.1, RAIL, l), Vector3(c.x, y + RAIL / 2.0, c.y), "", true)
+	bar(Vector3(a.x, y + RAIL, a.y), Vector3(b.x, y + RAIL, b.y), 0.05, kind)
+	var n := maxi(ceili(l / 1.2), 1)
+	for i in n + 1:
+		var p := a.lerp(b, float(i) / n)
+		box(Vector3(0.05, RAIL, 0.05), Vector3(p.x, y + RAIL / 2.0, p.y), kind)
+
+## The room's floor area (x, z) minus `holes`, as few rectangles as a
+## grid over their edges allows.
+func cover(area: Rect2, holes: Array) -> Array[Rect2]:
+	var xs := [area.position.x, area.end.x]
+	var zs := [area.position.y, area.end.y]
+	for h in holes:
+		xs.append_array([clampf(h.position.x, area.position.x, area.end.x), clampf(h.end.x, area.position.x, area.end.x)])
+		zs.append_array([clampf(h.position.y, area.position.y, area.end.y), clampf(h.end.y, area.position.y, area.end.y)])
+	xs.sort()
+	zs.sort()
+	var out: Array[Rect2] = []
+	for j in zs.size() - 1:
+		var run := -1
+		for i in xs.size():
+			var inside := false
+			if i < xs.size() - 1 and xs[i + 1] - xs[i] > 0.001 and zs[j + 1] - zs[j] > 0.001:
+				var mid := Vector2((xs[i] + xs[i + 1]) / 2.0, (zs[j] + zs[j + 1]) / 2.0)
+				inside = not holes.any(func(h: Rect2) -> bool: return h.has_point(mid))
+			if inside and run < 0:
+				run = i
+			elif not inside and run >= 0:
+				out.append(Rect2(xs[run], zs[j], xs[i] - xs[run], zs[j + 1] - zs[j]))
+				run = -1
+	return out
+
+## What of FREE the shaft takes from this cube's floor: all of it but the
+## entry corner, where the stairs from below come out.
+func shaft_hole() -> Array[Rect2]:
+	var f := FREE
+	var e := SPIRAL_ENTRY
+	return [Rect2(f.position, Vector2(e.position.x - f.position.x, f.size.y)), Rect2(e.position.x, e.end.y, e.size.x, f.end.y - e.end.y)]
+
+## Spiral stairs filling FREE from this cube's floor to the next one's:
+## a ring SPIRAL_RING wide around a solid core, SPIRAL_LAPS laps, a flat
+## landing at every corner, and the entry corner (by the walkway
+## crossing) at every floor. Railed on the outside all the way up, open
+## only at the foot of the entry; the cube above opens its floor for it.
+func spiral() -> void:
+	var f := FREE
+	var r := SPIRAL_RING
+	var h := Room.CELL_H
+	var corners: Array[Rect2] = [SPIRAL_ENTRY, Rect2(f.position.x, f.position.y, r, r), Rect2(f.position.x, f.end.y - r, r, r), Rect2(f.end.x - r, f.end.y - r, r, r)]
+	var flights := 4 * SPIRAL_LAPS
+	var rise := h / flights
+	for k in flights + 1:
+		var y := k * rise
+		var c := corners[k % 4].get_center()
+		box(Vector3(r, 0.25, r), Vector3(c.x, y - 0.125, c.y), "accent", true)
+		if k == flights:
+			break
+		# To the next corner, along the side between them.
+		var n := corners[(k + 1) % 4].get_center()
+		var dir := (n - c).normalized()
+		var a := c + dir * r / 2.0
+		var b := n - dir * r / 2.0
+		stair(Vector3(a.x, y, a.y), Vector3(b.x, y + rise, b.y), r, "accent", y - 0.35)
+		# Outer rail: the side of the ring away from the core.
+		var out := Vector2(dir.y, -dir.x)
+		if out.dot(c - f.get_center()) < 0.0:
+			out = -out
+		var o0 := c + out * r / 2.0 - dir * r / 2.0
+		var o1 := n + out * r / 2.0 + dir * r / 2.0
+		bar(Vector3(o0.x, y + RAIL, o0.y), Vector3(o1.x, y + rise + RAIL, o1.y), 0.05, "edge")
+	# The core, a little narrower than the well: a slot too thin to fall
+	# into, so brushing the core never pins you to a flight.
+	var core := Rect2(f.position + Vector2(r, r), f.size - Vector2(2 * r, 2 * r)).grow(-0.15)
+	box(Vector3(core.size.x, h, core.size.y), Vector3(core.get_center().x, h / 2.0, core.get_center().y), "wall", true)
+	# Invisible walls around FREE, bottom to top, but for the way in.
+	var e := SPIRAL_ENTRY
+	for side: Array in [
+			[Vector2(f.position.x, f.position.y), Vector2(e.position.x, f.position.y)], # north, up to the entry
+			[Vector2(f.end.x, e.end.y), Vector2(f.end.x, f.end.y)], # east, past the entry
+			[Vector2(f.position.x, f.position.y), Vector2(f.position.x, f.end.y)], # west
+			[Vector2(f.position.x, f.end.y), Vector2(f.end.x, f.end.y)]]: # south
+		_wall(side[0], side[1], 0.0, h)
+	_wall(Vector2(e.position.x, f.position.y), Vector2(f.end.x, f.position.y), SPIRAL_DOOR, h)
+	_wall(Vector2(f.end.x, f.position.y), Vector2(f.end.x, e.end.y), SPIRAL_DOOR, h)
+	# Walked up one whole cube: out on the walkway above.
+	var pts: Array[Vector3] = [Vector3(-0.8, 0, 0.8), Vector3(e.get_center().x, 0, e.get_center().y)]
+	for k in range(1, flights + 1):
+		var c := corners[k % 4].get_center()
+		pts.append(Vector3(c.x, k * rise, c.y))
+	pts.append(Vector3(-0.8, h, 0.8))
+	route(pts)
+
+func _wall(a: Vector2, b: Vector2, y0: float, y1: float) -> void:
+	var c := (a + b) / 2.0
+	var along_x := absf(b.x - a.x) > absf(b.y - a.y)
+	var l := (b - a).length()
+	box(Vector3(l, y1 - y0, 0.1) if along_x else Vector3(0.1, y1 - y0, l), Vector3(c.x, (y0 + y1) / 2.0, c.y), "", true)
+
+## The cube above a spiral: rails around its shaft hole (not when this
+## cube's own spiral starts there: its walls already fence it).
+func hole_rails() -> void:
+	if up:
+		return
+	var f := FREE
+	var e := SPIRAL_ENTRY
+	rail(Vector2(f.position.x, f.position.y), Vector2(e.position.x, f.position.y))
+	rail(Vector2(e.position.x, f.position.y), Vector2(e.position.x, e.end.y))
+	rail(Vector2(f.end.x, e.end.y), Vector2(f.end.x, f.end.y))
+	# (The entry's south edge stays open: the last flight comes up there.)
+
+## Rails along the walls left open to the void.
+func open_rails() -> void:
+	var i := INNER - 0.05
+	var sides := [[Vector2(-i, -i), Vector2(i, -i)], [Vector2(-i, i), Vector2(i, i)], [Vector2(i, -i), Vector2(i, i)], [Vector2(-i, -i), Vector2(-i, i)]]
+	for dir in 4:
+		if open[dir]:
+			rail(sides[dir][0], sides[dir][1])
+
+## A void cell: no walls, floor or ceiling; only what walking needs, as
+## bridges in the air: the crossing, an arm to every door, the pad of its
+## portal if it has one, and the spiral's entry corner. Railed wherever
+## an edge drops into the void (not where it meets a door).
+func void_cell(link_corner: int) -> void:
+	var half := ROOM_SIZE / 2.0
+	var wk := WALK_HALF
+	var walk: Array[Rect2] = [Rect2(-wk, -wk - 1.0, 2 * wk + 1.0, 2 * wk + 2.0), Rect2(-wk - 1.0, -wk - 1.0, 1.0, 2 * wk + 1.0)]
+	var arms: Array[Rect2] = [Rect2(-wk, -half, 2 * wk, half), Rect2(-wk, 0, 2 * wk, half), Rect2(0, -wk, half, 2 * wk), Rect2(-half, -wk, half, 2 * wk)]
+	for dir in 4:
+		if exits[dir]:
+			walk.append(arms[dir])
+	if link_corner != 0:
+		walk.append(PADS[0] if link_corner > 0 else PADS[1])
+	for r in walk:
+		var c := r.get_center()
+		box(Vector3(r.size.x, 0.3, r.size.y), Vector3(c.x, -0.15, c.y), "floor", true)
+	# Rails: every grid edge between walkable and not, but at the doors.
+	var xs := [-half, half]
+	var zs := [-half, half]
+	for r in walk:
+		xs.append_array([r.position.x, r.end.x])
+		zs.append_array([r.position.y, r.end.y])
+	xs.sort()
+	zs.sort()
+	var on := func(p: Vector2) -> bool:
+		return walk.any(func(r: Rect2) -> bool: return r.has_point(p)) and absf(p.x) < half and absf(p.y) < half
+	for j in zs.size() - 1:
+		for i in xs.size() - 1:
+			var lo := Vector2(xs[i], zs[j])
+			var hi := Vector2(xs[i + 1], zs[j + 1])
+			if hi.x - lo.x < 0.001 or hi.y - lo.y < 0.001 or not on.call((lo + hi) / 2.0):
+				continue
+			var m := (lo + hi) / 2.0
+			var eps := 0.01
+			for side: Array in [[Vector2(m.x, lo.y - eps), lo, Vector2(hi.x, lo.y), 0], [Vector2(m.x, hi.y + eps), Vector2(lo.x, hi.y), hi, 1], [Vector2(hi.x + eps, m.y), Vector2(hi.x, lo.y), hi, 2], [Vector2(lo.x - eps, m.y), lo, Vector2(lo.x, hi.y), 3]]:
+				var beyond: Vector2 = side[0]
+				if on.call(beyond):
+					continue
+				# The room's edge where a door is: the next cell goes on.
+				var at_door: bool = (side[3] == 0 and lo.y <= -half + eps and exits[0]) or (side[3] == 1 and hi.y >= half - eps and exits[1]) \
+					or (side[3] == 2 and hi.x >= half - eps and exits[2]) or (side[3] == 3 and lo.x <= -half + eps and exits[3])
+				if at_door:
+					continue
+				# The spiral's entry corner comes out of the shaft: no rail there.
+				if shaft() and SPIRAL_ENTRY.grow(0.02).has_point(beyond):
+					continue
+				var inset: Vector2 = (m - beyond).normalized() * 0.05
+				rail(side[1] + inset, side[2] + inset)
+
 ## A validation walk (room coordinates; y = NAN: on a ramp, not checked).
 func route(points: Array[Vector3]) -> void:
 	routes.append(PackedVector3Array(points))
@@ -166,6 +373,8 @@ func segments() -> Array[Dictionary]:
 	if _segments.is_empty():
 		var half := ROOM_SIZE / 2.0
 		for dir in 4:
+			if open[dir]:
+				continue # open to the void: no wall there
 			var side := dir == Room.Exit.EAST or dir == Room.Exit.WEST
 			var sgn := -1.0 if dir == Room.Exit.NORTH or dir == Room.Exit.WEST else 1.0
 			var ranges := [[-half, half]] if not exits[dir] else [[-half, -DOOR_WIDTH / 2.0], [DOOR_WIDTH / 2.0, half]]
@@ -217,10 +426,12 @@ func in_free(p: Vector3, margin := 0.5) -> bool:
 	return FREE.grow(margin).has_point(Vector2(p.x, p.z))
 
 ## True if a solid footprint (centre, size; y ignored) stays inside the
-## room and out of the walkway plus, the portal corners and the hideout
-## corner: somewhere it can never block a way through.
+## room and out of the walkway plus, the portal corners, the hideout corner
+## and a spiral shaft: somewhere it can never block a way through.
 func clear(center: Vector3, size: Vector3) -> bool:
 	var r := Rect2(center.x - size.x / 2.0, center.z - size.z / 2.0, size.x, size.z)
+	if shaft() and r.intersects(FREE):
+		return false
 	if r.position.x < -INNER or r.position.y < -INNER or r.end.x > INNER or r.end.y > INNER:
 		return false
 	if (r.position.x < WALK_HALF and r.end.x > -WALK_HALF) or (r.position.y < WALK_HALF and r.end.y > -WALK_HALF):

@@ -31,5 +31,7 @@ func build(b: RoomBuilder) -> void:
 		var pos := Vector3(along, h / 2.0, across) if arm[0] else Vector3(across, h / 2.0, along)
 		b.box(size, pos, kind, true)
 	for r in walls:
+		if b.shaft() and r.intersects(b.FREE):
+			continue
 		var c := r.get_center()
 		b.box(Vector3(r.size.x, h, r.size.y), Vector3(c.x, h / 2.0, c.y), kind, true)

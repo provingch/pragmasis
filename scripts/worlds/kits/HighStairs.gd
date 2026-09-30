@@ -23,6 +23,8 @@ func build(b: RoomBuilder) -> void:
 		var n := int(rise / 0.3)
 		var run := minf(length - 1.4, rise / 0.75)
 		var from: float = seg.from + 0.1 if b.rng.randf() < 0.5 else seg.to - 0.1 - run - 1.2
+		if b.shaft() and (b.in_free(b.at(seg, from, 1.0, 0)) or b.in_free(b.at(seg, from + run + 1.2, 1.0, 0))):
+			continue
 		for i in n:
 			var a := from + run * (i + 0.5) / n
 			var y := y0 + rise * (i + 1) / n

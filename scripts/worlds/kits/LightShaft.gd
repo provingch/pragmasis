@@ -15,6 +15,8 @@ class_name LightShaft
 @export var core_kind := ""
 
 func build(b: RoomBuilder) -> void:
+	if b.shaft() and b.in_free(Vector3(at.x, 0, at.y), 0.0):
+		return
 	var t := b.height if top < 0.0 else top
 	var h := t - bottom
 	b.box(Vector3(size.x, h, size.y), Vector3(at.x, bottom + h / 2.0, at.y), kind)

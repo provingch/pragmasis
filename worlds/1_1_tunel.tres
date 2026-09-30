@@ -86,6 +86,7 @@ wall_props = Array[ExtResource("2_641nh")]([SubResource("Resource_ioui5"), SubRe
 ceiling_kit = SubResource("Resource_co1ah")
 ceiling_props = Array[ExtResource("2_641nh")]([SubResource("Resource_641nh"), SubResource("Resource_656iv")])
 floor_props = Array[ExtResource("2_641nh")]([SubResource("Resource_nvyul")])
+vertical = 0.06
 music = "res://audio/music/sedimento.tres"
 music_fx = SubResource("Resource_j4b0b")
 noise = 1.8

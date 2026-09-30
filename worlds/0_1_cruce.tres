@@ -17,9 +17,9 @@ script = ExtResource("3_b6p0i")
 count_min = 3
 count_max = 6
 size_min = 0.8
-size_max = 2.2
-y_min = 4.5
-y_max = 8.0
+size_max = 1.6
+y_min = 4.2
+y_max = 6.0
 spread = 3.6
 kind = "accent"
 
@@ -28,9 +28,9 @@ script = ExtResource("4_sq1je")
 along_x = PackedFloat32Array(-2.5, 2.5)
 along_z = PackedFloat32Array()
 width = 0.5
-height = 0.6
+height = 0.5
 kind = "wall"
-at_y = 6.4
+at_y = 5.6
 
 [sub_resource type="Resource" id="Resource_sq1je"]
 script = ExtResource("5_0i7x0")
@@ -41,6 +41,7 @@ script = ExtResource("6_gfc6b")
 mode = 2
 depth = 2.3
 lower_kind = "accent"
+rails = true
 lip_kind = "trim"
 
 [sub_resource type="Resource" id="Resource_gfc6b"]
@@ -59,7 +60,7 @@ trim_color = Color(0.76862746, 0.9254902, 1, 1)
 light_color = Color(0.93333334, 0.95686275, 1, 1)
 fog_color = Color(0.6039216, 0.63529414, 0.6627451, 1)
 light_energy = 7.0
-light_y = 8.6
+light_y = 6.8
 fog_begin = 9.0
 fog_height = -0.5
 fog_height_density = 0.3
@@ -68,10 +69,13 @@ ambient = 0.16
 roughness = 0.8
 grime_frequency = 0.05
 grime = 0.07
-height = 9.0
+height = 7.0
 floor_kit = SubResource("Resource_0i7x0")
 wall_kit = SubResource("Resource_gfc6b")
 ceiling_kit = SubResource("Resource_1buw2")
 ceiling_props = Array[ExtResource("2_g8ur1")]([SubResource("Resource_g8ur1"), SubResource("Resource_b6p0i"), SubResource("Resource_sq1je")])
+vertical = 0.15
+void_chance = 0.25
+open_chance = 0.6
 music = "res://audio/music/umbral.tres"
 visibility = 1.6

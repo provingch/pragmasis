@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WorldDef" load_steps=16 format=3]
+[gd_resource type="Resource" script_class="WorldDef" load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/worlds/kits/CeilingSlab.gd" id="1_c1fay"]
 [ext_resource type="Script" path="res://scripts/worlds/kits/RoomKit.gd" id="2_l0sk1"]
@@ -14,46 +14,35 @@ script = ExtResource("1_c1fay")
 
 [sub_resource type="Resource" id="Resource_l0sk1"]
 script = ExtResource("3_6uoq3")
-count_min = 3
-count_max = 6
-size_min = 1.0
-size_max = 2.6
-y_min = -8.0
-y_max = -2.5
-spread = 3.8
-kind = "accent"
-
-[sub_resource type="Resource" id="Resource_6uoq3"]
-script = ExtResource("3_6uoq3")
 count_min = 2
 count_max = 4
 size_min = 0.8
-size_max = 2.0
+size_max = 1.8
 y_min = 4.5
-y_max = 9.0
+y_max = 8.2
 spread = 3.6
 kind = "wall"
 
-[sub_resource type="Resource" id="Resource_ooh5c"]
+[sub_resource type="Resource" id="Resource_6uoq3"]
 script = ExtResource("4_ooh5c")
 size = Vector3(0.6, 0.6, 0.6)
 offset = 0.0
 from_light = true
 
-[sub_resource type="Resource" id="Resource_bie5u"]
+[sub_resource type="Resource" id="Resource_ooh5c"]
 script = ExtResource("5_bie5u")
 mode = 2
-depth = 9.0
+depth = 2.3
 lower_kind = "accent"
 rails = true
 lip_kind = "trim"
 
-[sub_resource type="Resource" id="Resource_6ql5r"]
+[sub_resource type="Resource" id="Resource_bie5u"]
 script = ExtResource("6_6ql5r")
 reverb = 0.8
 reverb_room = 1.0
 
-[sub_resource type="Resource" id="Resource_sjvky"]
+[sub_resource type="Resource" id="Resource_6ql5r"]
 script = ExtResource("8_4xwlu")
 
 [resource]
@@ -79,10 +68,13 @@ ambient = 0.28
 roughness = 0.75
 grime_frequency = 0.07
 grime = 0.08
-height = 10.0
-floor_kit = SubResource("Resource_bie5u")
-wall_kit = SubResource("Resource_sjvky")
+height = 9.5
+floor_kit = SubResource("Resource_ooh5c")
+wall_kit = SubResource("Resource_6ql5r")
 ceiling_kit = SubResource("Resource_c1fay")
-ceiling_props = Array[ExtResource("2_l0sk1")]([SubResource("Resource_l0sk1"), SubResource("Resource_6uoq3"), SubResource("Resource_ooh5c")])
+ceiling_props = Array[ExtResource("2_l0sk1")]([SubResource("Resource_l0sk1"), SubResource("Resource_6uoq3")])
+vertical = 0.2
+void_chance = 0.45
+open_chance = 0.8
 music = "res://audio/music/eter.tres"
-music_fx = SubResource("Resource_6ql5r")
+music_fx = SubResource("Resource_bie5u")

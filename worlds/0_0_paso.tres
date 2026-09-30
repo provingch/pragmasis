@@ -62,4 +62,6 @@ wall_props = Array[ExtResource("2_hyr00")]([SubResource("Resource_qytbb")])
 ceiling_kit = SubResource("Resource_ydu4d")
 ceiling_props = Array[ExtResource("2_hyr00")]([SubResource("Resource_hyr00")])
 floor_props = Array[ExtResource("2_hyr00")]([SubResource("Resource_v1rha")])
+void_chance = 0.04
+open_chance = 0.3
 music = "res://audio/music/umbral.tres"

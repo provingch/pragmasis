@@ -22,6 +22,8 @@ func build(b: RoomBuilder) -> void:
 		var d := b.rng.randf_range(depth_min, depth_max)
 		var y := b.rng.randf_range(y_min, minf(y_max, b.height - 0.5))
 		var at := b.at(seg, b.mid(seg), b.WALL_THICKNESS / 2.0 + d / 2.0, y)
+		if b.shaft() and b.in_free(at):
+			continue
 		b.box(b.sized(seg, b.length(seg), thickness, d), at, kind)
 		if edge_kind != "":
 			b.box(b.sized(seg, b.length(seg), 0.04, 0.04), at + seg.inward * d / 2.0 - Vector3(0, thickness / 2.0, 0), edge_kind)
