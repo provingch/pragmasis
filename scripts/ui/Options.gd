@@ -23,6 +23,8 @@ const ROWS := [
 		"Sombras en tiempo real: cada luz con sombra vuelve a dibujar la escena 6 veces."],
 	["gen_radius", "DISTANCIA", [[2, "CORTA"], [3, "MEDIA"], [4, "LARGA"]],
 		"Salas generadas a tu alrededor. La niebla se ajusta para tapar el borde."],
+	["v_radius", "DISTANCIA VERTICAL", [[0, "SOLO ESTE PISO"], [1, "1 PISO"], [2, "2 PISOS"]],
+		"Pisos de salas construidos arriba y abajo del tuyo. Más allá, el campo de cubos."],
 	["rendering_method", "MÉTODO DE RENDER", [["forward_plus", "FORWARD+"], ["mobile", "MOBILE"]],
 		"MOBILE es bastante más liviano, pero sin SSAO ni FSR. Se aplica al reiniciar el juego."],
 	["vsync", "VSYNC", [[false, "NO"], [true, "SÍ"]],

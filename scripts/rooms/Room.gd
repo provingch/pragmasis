@@ -186,6 +186,12 @@ func speed_at(local: Vector3) -> float:
 func disturb(seconds: float) -> void:
 	_disturb_t = maxf(_disturb_t, seconds)
 
+## Room lights shine only on the player's floor: the others are seen
+## through shafts and open faces, where ambient light does.
+func set_floor_active(on: bool) -> void:
+	if _light:
+		_light.visible = on
+
 ## Real-time omni shadows re-render the scene 6x per light; RoomGenerator
 ## turns them on only for the room the player is in.
 func set_shadow(on: bool) -> void:

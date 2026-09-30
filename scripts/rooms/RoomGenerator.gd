@@ -60,8 +60,9 @@ enum Salt { CARVE, EAST, SOUTH, PORTAL, PORTAL_DIR, STYLE, HIDEOUT, BEACON, ANCH
 const STEPS: Array[Vector3i] = [Vector3i(0, 0, -1), Vector3i(0, 0, 1), Vector3i(1, 0, 0), Vector3i(-1, 0, 0)]
 
 ## Radii are Chebyshev distances in cells, set by Settings (set_radii).
-## Cells within gen_radius of the player (v_radius floors up and down)
-## always exist.
+## Cells within gen_radius of the player always exist on their floor, and
+## one ring less on the v_radius floors above and below (only seen through
+## shafts, open faces and void cells; unlit, see Room.set_floor_active).
 var gen_radius := 3
 var v_radius := 1
 ## Cells farther than this are freed (one more floor than v_radius).
@@ -205,8 +206,9 @@ func _stream() -> void:
 		rooms.erase(c)
 	_pending.clear()
 	for dy in range(-v_radius, v_radius + 1):
-		for dx in range(-gen_radius, gen_radius + 1):
-			for dz in range(-gen_radius, gen_radius + 1):
+		var r := gen_radius if dy == 0 else maxi(gen_radius - 1, 1)
+		for dx in range(-r, r + 1):
+			for dz in range(-r, r + 1):
 				var c := _center + Vector3i(dx, dy, dz)
 				if not rooms.has(c):
 					_pending.append(c)
@@ -253,12 +255,14 @@ func _build(c: Vector3i) -> void:
 	rooms[c] = room
 	_parent.add_child(room)
 	room.set_shadow(_dist(c) <= shadow_radius and c.y == _center.y)
+	room.set_floor_active(c.y == _center.y)
 	room.set_fog_end(fog_end())
 
 func _update_rooms() -> void:
 	var fog := fog_end()
 	for c in rooms:
 		rooms[c].set_shadow(_dist(c) <= shadow_radius and c.y == _center.y)
+		rooms[c].set_floor_active(c.y == _center.y)
 		rooms[c].set_fog_end(fog)
 
 func _queue_warm(w: int, urgent := false) -> void:

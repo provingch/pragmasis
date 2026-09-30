@@ -17,10 +17,12 @@ const METHOD_KEY := "renderer/rendering_method"
 ## that turns the preset into CUSTOM. shadow_radius: -1 = no real-time
 ## shadows at all, 0 = only the room you're in, 1..2 = rings around it.
 ## gen_radius: rooms streamed around you (free radius and fog follow it).
+## v_radius: floors of them above and below yours (the rest, the cube
+## field suggests).
 const PRESETS := {
-	"BAJA": {"render_scale": 0.6, "ssao": false, "glow": false, "shadow_radius": -1, "gen_radius": 2},
-	"MEDIA": {"render_scale": 0.75, "ssao": false, "glow": true, "shadow_radius": 0, "gen_radius": 3},
-	"ALTA": {"render_scale": 1.0, "ssao": true, "glow": true, "shadow_radius": 0, "gen_radius": 4},
+	"BAJA": {"render_scale": 0.6, "ssao": false, "glow": false, "shadow_radius": -1, "gen_radius": 2, "v_radius": 1},
+	"MEDIA": {"render_scale": 0.75, "ssao": false, "glow": true, "shadow_radius": 0, "gen_radius": 3, "v_radius": 1},
+	"ALTA": {"render_scale": 1.0, "ssao": true, "glow": true, "shadow_radius": 0, "gen_radius": 4, "v_radius": 1},
 }
 ## First run, no file yet: the preset that holds 60 fps on an integrated GPU
 ## (Intel UHD G1 at 1366x768: ~12 ms GPU; MEDIA ~22 ms).
@@ -35,6 +37,7 @@ var ssao := false
 var glow := false
 var shadow_radius := -1
 var gen_radius := 2
+var v_radius := 1
 var vsync := true
 var fullscreen := false
 ## Saved choice; takes effect on next launch. Compare with running_method().
@@ -73,7 +76,7 @@ func apply() -> void:
 	var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if fullscreen else DisplayServer.WINDOW_MODE_WINDOWED
 	if DisplayServer.window_get_mode() != mode:
 		DisplayServer.window_set_mode(mode)
-	RoomGenerator.set_radii(gen_radius, free_radius(), shadow_radius)
+	RoomGenerator.set_radii(gen_radius, free_radius(), shadow_radius, v_radius)
 	changed.emit()
 
 ## FSR 1: one upscale+sharpen pass (~1 ms measured), Forward+ only in 4.5;
@@ -93,6 +96,7 @@ func load_settings() -> void:
 		set(key, cfg.get_value(SECTION, key, get(key)))
 	render_scale = clampf(render_scale, 0.5, 1.0)
 	shadow_radius = clampi(shadow_radius, -1, 2)
+	v_radius = clampi(v_radius, 0, 2)
 	if not FREE_FOR_GEN.has(gen_radius):
 		gen_radius = PRESETS[DEFAULT_PRESET].gen_radius
 	if not PRESETS.has(preset):
