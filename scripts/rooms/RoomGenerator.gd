@@ -93,11 +93,12 @@ func init_world(parent: Node3D, player: Node3D, start_w: int) -> void:
 func _ready() -> void:
 	GameManager.sequence_completed.connect(func(_done: int) -> void: regenerate())
 
-## New sequence: a new world (and anchor) around the player, who stands on
-## the old anchor, at a room centre: walkway in every layout.
+## New sequence: a new world (and anchor) around the player, who is set
+## down on their room's landing point in it.
 func regenerate() -> void:
 	_clear_rooms()
 	_reseed()
+	land(_player)
 
 func _reseed() -> void:
 	world_seed = randi()
@@ -256,6 +257,26 @@ func edge_open(x: int, z: int, east: bool) -> bool:
 ## [north, south, east, west], matching Room.Exit.
 func exits_for(x: int, z: int) -> Array[bool]:
 	return [edge_open(x, z - 1, false), edge_open(x, z, false), edge_open(x, z, true), edge_open(x - 1, z, true)]
+
+## Where anyone arriving in cell c of world w (through a portal, a
+## fissure, a new sequence) is set down, feet on the floor: beside its own
+## portal on the pad if it has one, else on the walkway, off the centre
+## (the anchor stands there). Outside any portal's reach either way.
+func landing(c: Vector2i, w: int) -> Vector3:
+	var link := link_of(c.x, c.y, w)
+	var local := Vector3(0, 0, 1.2)
+	if link.x >= 0:
+		local = Vector3.ONE * 2.4 * (1.0 if link.x > w else -1.0)
+		local.y = 0.0
+	return Vector3(c.x * Room.ROOM_SIZE, 0, c.y * Room.ROOM_SIZE) + local
+
+## Moves a body (its origin 0.95 above its feet) to its cell's landing point.
+func land(body: Node3D) -> void:
+	if not is_instance_valid(body):
+		return
+	body.global_position = landing(cell_of(body.global_position), active_w) + Vector3(0, 0.95, 0)
+	if body is CharacterBody3D:
+		body.velocity = Vector3.ZERO
 
 ## Where cell (x, z)'s portal leads in world w: Vector2i(target world,
 ## 1 if it's a fissure), NO_LINK for none.

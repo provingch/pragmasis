@@ -21,7 +21,8 @@ func reset() -> void:
 	player_w = GameManager.mode.start_world()
 	_last_shift_ms = -SHIFT_COOLDOWN_MS
 
-## Through a portal or fissure to world `new_w`.
+## Through a portal or fissure to world `new_w`; the player lands on the
+## destination room's landing point (RoomGenerator.landing).
 func request_shift(new_w: int) -> void:
 	var now := Time.get_ticks_msec()
 	if now - _last_shift_ms < SHIFT_COOLDOWN_MS:
@@ -36,5 +37,7 @@ func request_shift(new_w: int) -> void:
 	# attaching a never-seen layer during the message-queue flush costs ~1 s
 	# of GPU on the next frame (measured on the integrated GPU); from
 	# process_frame it doesn't.
-	get_tree().process_frame.connect(RoomGenerator.switch_layer.bind(player_w), CONNECT_ONE_SHOT)
+	get_tree().process_frame.connect(func() -> void:
+		RoomGenerator.switch_layer(player_w)
+		RoomGenerator.land(get_tree().get_first_node_in_group("player")), CONNECT_ONE_SHOT)
 	layer_changed.emit(player_w)
